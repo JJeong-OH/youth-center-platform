@@ -48,9 +48,15 @@ export default function Home() {
         throw new Error(data.message || '로그인에 실패했습니다.');
       }
       
+      // 토큰과 사용자 정보 저장
       localStorage.setItem('accessToken', data.access_token);
       setToken(data.access_token);
-      setUser(data.user);
+      
+      // 사용자 정보도 바로 설정
+      if (data.user) {
+        setUser(data.user);
+      }
+      
       setLoginEmail('');
       setLoginPassword('');
     } catch (err: any) {
@@ -105,14 +111,17 @@ export default function Home() {
   };
 
   useEffect(() => {
+    // 페이지 로드 시 토큰 확인
     const storedToken = localStorage.getItem('accessToken');
     if (storedToken) {
       setToken(storedToken);
+      console.log('저장된 토큰 발견:', storedToken.substring(0, 20) + '...');
     }
   }, []);
 
   useEffect(() => {
     if (token && !user) {
+      console.log('토큰으로 프로필 가져오기 시도...');
       const fetchProfile = async () => {
         try {
           const response = await fetch('http://localhost:3000/auth/profile', {
@@ -120,15 +129,19 @@ export default function Home() {
           });
           
           if (!response.ok) {
+            console.error('프로필 가져오기 실패:', response.status);
             throw new Error('프로필 가져오기 실패');
           }
           
           const data = await response.json();
+          console.log('프로필 가져오기 성공:', data);
           setUser(data);
         } catch (err: any) {
-          console.error('프로필 가져오기 실패:', err);
+          console.error('프로필 가져오기 에러:', err);
+          // 토큰이 유효하지 않으면 로그아웃
           localStorage.removeItem('accessToken');
           setToken(null);
+          setError('세션이 만료되었습니다. 다시 로그인해주세요.');
         }
       };
       fetchProfile();
@@ -343,9 +356,13 @@ export default function Home() {
           <Link href="/chat" className="btn btn-primary">
             AI 상담
           </Link>
-          <button className="btn btn-secondary">프로그램 추천</button>
+          <Link href="/programs" className="btn btn-secondary">
+            프로그램 추천
+          </Link>
           <button className="btn btn-green">나의 포트폴리오</button>
-          <button className="btn btn-purple">나의 역량 검사</button>
+          <Link href="/survey" className="btn btn-purple">
+            나의 역량 검사
+          </Link>
         </div>
         
         <div className="button-grid">

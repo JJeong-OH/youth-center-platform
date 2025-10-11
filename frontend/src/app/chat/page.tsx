@@ -10,14 +10,26 @@ interface Message {
 }
 
 export default function ChatPage() {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: 1,
-      text: '안녕하세요! 미추홀구청소년센터 AI 상담사 미추입니다. 무엇을 도와드릴까요?',
-      isUser: false,
-      timestamp: new Date()
-    }
-  ]);
+  const greetingMessages = [
+    '왔구나! 기다리고 있었어 :) 어떤 이야기 해볼까?',
+    '헬로~ 나 불렀지? 뭐든 얘기해줘!',
+    '불러줘서 고마워! 나는 미추야 :) 편하게 말 걸어줘.',
+    '응, 나 여기 있어. 무슨 얘기든 괜찮아~',
+    '좋아, 우리 얘기 한번 해보자! 어떤 고민이 있어?',
+    '미추 소환 완료✨ 뭐가 궁금한지 말해줘!',
+    '고민 있어? 아니면 그냥 수다? 다 좋아~',
+    '너를 위해 대기 중이었지! 자, 말해봐~',
+    '잘 왔어! 나랑 같이 이야기해보자 :)',
+    '어떤 일이 있었는지 궁금한데? 천천히 말해줘~'
+  ];
+
+  const getRandomGreeting = () => {
+    const index = Math.floor(Math.random() * greetingMessages.length);
+    return greetingMessages[index];
+  };
+
+  // 초기에는 빈 배열로 시작
+  const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -25,6 +37,17 @@ export default function ChatPage() {
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
+
+  useEffect(() => {
+    // 클라이언트에서만 랜덤 인삿말 추가
+    const initialMessage: Message = {
+      id: 1,
+      text: getRandomGreeting(),
+      isUser: false,
+      timestamp: new Date()
+    };
+    setMessages([initialMessage]);
+  }, []);
 
   useEffect(() => {
     scrollToBottom();
@@ -46,14 +69,12 @@ export default function ChatPage() {
     setIsLoading(true);
 
     try {
-      // 토큰 가져오기
       const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
-      
+
       if (!token) {
         throw new Error('로그인이 필요합니다.');
       }
 
-      // 백엔드 AI API 호출
       const response = await fetch('http://localhost:3000/ai/chat', {
         method: 'POST',
         headers: {
@@ -64,28 +85,26 @@ export default function ChatPage() {
       });
 
       const data = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(data.message || 'AI 응답 실패');
       }
 
-      // AI 응답 메시지 추가
       const aiMessage: Message = {
         id: messages.length + 2,
         text: data.reply || '응답을 받지 못했습니다.',
         isUser: false,
         timestamp: new Date()
       };
-      
+
       setMessages(prev => [...prev, aiMessage]);
-      
+
     } catch (error: any) {
       console.error('AI 응답 오류:', error);
-      
-      // 에러 메시지 표시
+
       const errorMessage: Message = {
         id: messages.length + 2,
-        text: error.message === '로그인이 필요합니다.' 
+        text: error.message === '로그인이 필요합니다.'
           ? '로그인이 필요합니다. 메인 페이지로 돌아가서 로그인해주세요.'
           : '죄송합니다. 응답 중 오류가 발생했습니다. 다시 시도해주세요.',
         isUser: false,
