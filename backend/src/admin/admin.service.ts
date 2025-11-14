@@ -3,27 +3,52 @@ import { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 
-const prisma = new PrismaClient();
+// ❌ 이 줄 삭제
+// const prisma = new PrismaClient();
 
 @Injectable()
 export class AdminService {
+  // ✅ PrismaClient를 클래스 속성으로 선언
+  private prisma = new PrismaClient();
+
   constructor(private jwtService: JwtService) {}
 
   // 관리자 로그인
   async login(email: string, password: string) {
-    const user = await prisma.user.findUnique({
+    console.log('🔍 로그인 시도:', email);
+    console.log('🔍 DATABASE_URL:', process.env.DATABASE_URL?.substring(0, 50) + '...');
+    
+    const user = await this.prisma.user.findUnique({
       where: { email },
     });
 
-    if (!user || user.role !== 'ADMIN') {
+    console.log('🔍 찾은 사용자:', user ? {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      roleMatch: user.role === 'ADMIN'
+    } : null);
+
+    if (!user) {
+      console.log('❌ 사용자 없음');
+      throw new UnauthorizedException('사용자를 찾을 수 없습니다.');
+    }
+
+    if (user.role !== 'ADMIN') {
+      console.log('❌ 관리자 권한 없음. role:', user.role);
       throw new UnauthorizedException('관리자 권한이 없습니다.');
     }
 
+    console.log('🔍 비밀번호 검증 중...');
     const isPasswordValid = await bcrypt.compare(password, user.password_hash);
+    console.log('🔍 비밀번호 검증 결과:', isPasswordValid);
 
     if (!isPasswordValid) {
+      console.log('❌ 비밀번호 불일치');
       throw new UnauthorizedException('이메일 또는 비밀번호가 잘못되었습니다.');
     }
+
+    console.log('✅ 로그인 성공!');
 
     const payload = {
       userId: user.id,
@@ -48,16 +73,14 @@ export class AdminService {
 
   // 대시보드 통계
   async getDashboardStats() {
-    // 전체 회원 수
-    const totalUsers = await prisma.user.count();
+    const totalUsers = await this.prisma.user.count();
 
-    // 이번 달 신규 회원
     const startOfMonth = new Date(
       new Date().getFullYear(),
       new Date().getMonth(),
       1,
     );
-    const newUsersThisMonth = await prisma.user.count({
+    const newUsersThisMonth = await this.prisma.user.count({
       where: {
         created_at: {
           gte: startOfMonth,
@@ -65,19 +88,13 @@ export class AdminService {
       },
     });
 
-    // 설문 참여 수
-    const totalSurveys = await prisma.testResult.count();
-
-    // 프로그램 수
-    const totalPrograms = await prisma.program.count({
+    const totalSurveys = await this.prisma.testResult.count();
+    const totalPrograms = await this.prisma.program.count({
       where: { isActive: true },
     });
+    const totalBookings = await this.prisma.booking.count();
 
-    // 예약 수 (스키마 기준 'Booking' 모델 사용)
-    const totalBookings = await prisma.booking.count();
-
-    // 최근 설문 결과 (5개)
-    const recentSurveys = await prisma.testResult.findMany({
+    const recentSurveys = await this.prisma.testResult.findMany({
       take: 5,
       orderBy: { created_at: 'desc' },
       include: {
@@ -112,7 +129,7 @@ export class AdminService {
     const skip = (page - 1) * limit;
 
     const [users, total] = await Promise.all([
-      prisma.user.findMany({
+      this.prisma.user.findMany({
         skip,
         take: limit,
         orderBy: { created_at: 'desc' },
@@ -122,7 +139,7 @@ export class AdminService {
           bookings: true,
         },
       }),
-      prisma.user.count(),
+      this.prisma.user.count(),
     ]);
 
     return {
@@ -148,7 +165,7 @@ export class AdminService {
 
   // 회원 상세 정보
   async getUserDetail(userId: number) {
-    const user = await prisma.user.findUnique({
+    const user = await this.prisma.user.findUnique({
       where: { id: userId },
       include: {
         profiles: true,
@@ -189,7 +206,7 @@ export class AdminService {
 
   // 설문 결과 통계
   async getSurveyStats() {
-    const surveys = await prisma.testResult.findMany({
+    const surveys = await this.prisma.testResult.findMany({
       include: {
         user: {
           select: {
@@ -215,11 +232,10 @@ export class AdminService {
     };
   }
 
-  // ✅ 통합 사용자 통계 조회 (수정 완료)
+  // 통합 사용자 통계 조회
   async getIntegratedUserStats() {
     try {
-      // 1. 회원 데이터 (phone을 가져오기 위해 profiles 관계 포함)
-      const members = await prisma.user.findMany({
+      const members = await this.prisma.user.findMany({
         where: { role: 'USER' },
         select: {
           id: true,
@@ -230,13 +246,12 @@ export class AdminService {
             select: {
               phone: true,
             },
-            take: 1, // 사용자는 프로필을 하나만 가진다고 가정
+            take: 1,
           },
         },
       });
 
-      // 2. 비회원 데이터 (전화번호 기준 그룹화)
-      const guestPhones = await prisma.programApplication.findMany({
+      const guestPhones = await this.prisma.programApplication.findMany({
         where: {
           user_id: null,
           phone: { not: null },
@@ -248,28 +263,24 @@ export class AdminService {
         distinct: ['phone'],
       });
 
-      // 3. 각 사용자별 활동 데이터 집계
-      const integratedUsers: any[] = []; // 'never[]' 에러 해결
+      const integratedUsers: any[] = [];
 
-      // 회원 데이터 처리
       for (const member of members) {
-        // phone 번호를 profiles에서 추출
         const phone = member.profiles[0]?.phone || null;
 
-        const programCount = await prisma.programApplication.count({
+        const programCount = await this.prisma.programApplication.count({
           where: {
             OR: [{ user_id: member.id }, { phone: phone }],
           },
         });
 
-        // 스키마 수정: 'facilityBooking' -> 'booking', 'user_phone' -> 'phone'
-        const facilityCount = await prisma.booking.count({
+        const facilityCount = await this.prisma.booking.count({
           where: {
             OR: [{ userId: member.id }, { phone: phone }],
           },
         });
 
-        const programs = await prisma.programApplication.findMany({
+        const programs = await this.prisma.programApplication.findMany({
           where: {
             OR: [{ user_id: member.id }, { phone: phone }],
           },
@@ -281,8 +292,7 @@ export class AdminService {
           orderBy: { applied_at: 'desc' },
         });
 
-        // 스키마 수정: 'facilityBooking' -> 'booking', 'user_phone' -> 'phone'
-        const facilities = await prisma.booking.findMany({
+        const facilities = await this.prisma.booking.findMany({
           where: {
             OR: [{ userId: member.id }, { phone: phone }],
           },
@@ -291,14 +301,14 @@ export class AdminService {
               select: { name: true },
             },
           },
-          orderBy: { createdAt: 'desc' }, // 스키마 기준 'booking_date'가 없으므로 'createdAt'으로 변경
+          orderBy: { createdAt: 'desc' },
         });
 
         integratedUsers.push({
           type: 'member',
           id: member.id,
           name: member.name,
-          phone: phone, // phone 변수 사용
+          phone: phone,
           email: member.email,
           joinDate: member.created_at,
           programCount,
@@ -312,32 +322,29 @@ export class AdminService {
           facilities: facilities.map((f) => ({
             id: f.id,
             name: f.facility.name,
-            date: f.createdAt, // 스키마 기준 'booking_date'가 없으므로 'createdAt'으로 변경
+            date: f.createdAt,
             status: f.status,
           })),
         });
       }
 
-      // 비회원 데이터 처리
       for (const guest of guestPhones) {
         if (!guest.phone) continue;
 
-        // 이미 회원으로 등록된 전화번호는 제외
         const isMember = members.some(
           (m) => m.profiles[0]?.phone === guest.phone && m.profiles[0]?.phone != null,
         );
         if (isMember) continue;
 
-        const programCount = await prisma.programApplication.count({
+        const programCount = await this.prisma.programApplication.count({
           where: { phone: guest.phone },
         });
 
-        // 스키마 수정: 'facilityBooking' -> 'booking', 'user_phone' -> 'phone'
-        const facilityCount = await prisma.booking.count({
-          where: { phone: guest.phone }, // 스키마 기준 'user_phone'이 아닌 'phone'
+        const facilityCount = await this.prisma.booking.count({
+          where: { phone: guest.phone },
         });
 
-        const programs = await prisma.programApplication.findMany({
+        const programs = await this.prisma.programApplication.findMany({
           where: { phone: guest.phone },
           include: {
             program: {
@@ -347,19 +354,17 @@ export class AdminService {
           orderBy: { applied_at: 'desc' },
         });
 
-        // 스키마 수정: 'facilityBooking' -> 'booking', 'user_phone' -> 'phone'
-        const facilities = await prisma.booking.findMany({
-          where: { phone: guest.phone }, // 스키마 기준 'user_phone'이 아닌 'phone'
+        const facilities = await this.prisma.booking.findMany({
+          where: { phone: guest.phone },
           include: {
             facility: {
               select: { name: true },
             },
           },
-          orderBy: { createdAt: 'desc' }, // 스키마 기준 'booking_date'가 없으므로 'createdAt'으로 변경
+          orderBy: { createdAt: 'desc' },
         });
 
-        // 가장 최근 신청 정보 가져오기
-        const latestApplication = await prisma.programApplication.findFirst({
+        const latestApplication = await this.prisma.programApplication.findFirst({
           where: { phone: guest.phone },
           orderBy: { applied_at: 'desc' },
         });
@@ -385,13 +390,12 @@ export class AdminService {
           facilities: facilities.map((f) => ({
             id: f.id,
             name: f.facility.name,
-            date: f.createdAt, // 스키마 기준 'booking_date'가 없으므로 'createdAt'으로 변경
+            date: f.createdAt,
             status: f.status,
           })),
         });
       }
 
-      // 활동 많은 순으로 정렬
       integratedUsers.sort(
         (a, b) =>
           b.programCount + b.facilityCount - (a.programCount + a.facilityCount),
@@ -410,20 +414,19 @@ export class AdminService {
     }
   }
 
-  // ✅ 특정 사용자 상세 조회 (수정 완료)
+  // 특정 사용자 상세 조회
   async getUserDetailByPhone(phone: string) {
     try {
-      // 스키마 수정: 'User'가 아닌 'Profile'에서 'phone'으로 검색
-      const profile = await prisma.profile.findFirst({
+      const profile = await this.prisma.profile.findFirst({
         where: { phone },
         include: {
-          user: true, // 연결된 'User' 정보를 가져옴
+          user: true,
         },
       });
 
-      const member = profile?.user || null; // 'member'는 'user' 객체
+      const member = profile?.user || null;
 
-      const programs = await prisma.programApplication.findMany({
+      const programs = await this.prisma.programApplication.findMany({
         where: {
           OR: [{ user_id: member?.id }, { phone }],
         },
@@ -433,22 +436,21 @@ export class AdminService {
         orderBy: { applied_at: 'desc' },
       });
 
-      // 스키마 수정: 'facilityBooking' -> 'booking', 'user_phone' -> 'phone'
-      const facilities = await prisma.booking.findMany({
+      const facilities = await this.prisma.booking.findMany({
         where: {
           OR: [{ userId: member?.id }, { phone: phone }],
         },
         include: {
           facility: true,
         },
-        orderBy: { createdAt: 'desc' }, // 스키마 기준 'booking_date'가 없으므로 'createdAt'으로 변경
+        orderBy: { createdAt: 'desc' },
       });
 
       return {
         success: true,
         user: {
           type: member ? 'member' : 'guest',
-          info: member || { phone }, // 'member'가 null이 아니면 'user' 객체 전체를 반환
+          info: member || { phone },
           programs,
           facilities,
           stats: {
@@ -457,7 +459,7 @@ export class AdminService {
               .length,
             totalFacilities: facilities.length,
             approvedFacilities: facilities.filter(
-              (f) => f.status === 'approved' || f.status === 'active', // 스키마의 booking status가 'active'이므로 둘 다 허용
+              (f) => f.status === 'approved' || f.status === 'active',
             ).length,
           },
         },
