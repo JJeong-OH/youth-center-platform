@@ -1,0 +1,59 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 키오스크 전용 스타일 */
+@layer utilities {
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(0, 0, 0, 0.3);
+  }
+}
+
+@layer components {
+  .input-field {
+    @apply bg-white/70 rounded-lg p-3 border transition-all;
+  }
+
+  .input-field:focus {
+    @apply ring-2 ring-indigo-500 outline-none border-indigo-500;
+  }
+
+  .btn-primary {
+    @apply px-6 py-3 rounded-lg bg-indigo-600 text-white font-semibold transition-colors inline-flex items-center justify-center;
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    @apply bg-indigo-700;
+  }
+
+  .btn-primary:disabled {
+    @apply bg-indigo-300 cursor-not-allowed;
+  }
+
+  .btn-secondary {
+    @apply px-6 py-3 rounded-lg bg-slate-300 text-slate-800 font-semibold transition-colors;
+  }
+
+  .btn-secondary:hover:not(:disabled) {
+    @apply bg-slate-400;
+  }
+
+  .btn-secondary:disabled {
+    @apply bg-slate-200 cursor-not-allowed;
+  }
+}

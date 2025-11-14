@@ -3,9 +3,18 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
+interface Survey {
+  id: number;
+  userName: string;
+  answers: any;
+  scores: any;
+  createdAt: string;
+}
+
 export default function AdminSurveysPage() {
   const router = useRouter();
-  const [stats, setStats] = useState<any>(null);
+  const [surveys, setSurveys] = useState<Survey[]>([]);
+  const [totalSurveys, setTotalSurveys] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -15,16 +24,16 @@ export default function AdminSurveysPage() {
   const fetchSurveyStats = async () => {
     try {
       const token = localStorage.getItem('adminToken');
-      const response = await fetch('http://localhost:3000/admin/surveys/stats', {
+      const response = await fetch('http://localhost:3001/api/admin/surveys/stats', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
-
       const data = await response.json();
       
       if (data.success) {
-        setStats(data);
+        setSurveys(data.surveys);
+        setTotalSurveys(data.totalSurveys);
       }
     } catch (error) {
       console.error('설문 통계 조회 에러:', error);
@@ -33,131 +42,132 @@ export default function AdminSurveysPage() {
     }
   };
 
-  if (loading) {
-    return <div style={{ padding: '40px', textAlign: 'center' }}>로딩중...</div>;
-  }
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('ko-KR');
+  };
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#f5f5f5', padding: '24px' }}>
-      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-        {/* 헤더 */}
+    <div style={{ minHeight: '100vh', backgroundColor: '#f8fafc' }}>
+      {/* 헤더 */}
+      <header style={{
+        backgroundColor: 'white',
+        borderBottom: '1px solid #e2e8f0',
+        padding: '16px 24px',
+        marginBottom: '32px'
+      }}>
         <div style={{
-          backgroundColor: 'white',
-          padding: '24px',
-          borderRadius: '12px',
-          marginBottom: '24px'
+          maxWidth: '1400px',
+          margin: '0 auto',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center'
         }}>
-          <button
-            onClick={() => router.push('/admin/dashboard')}
-            style={{
-              background: 'none',
-              border: 'none',
-              fontSize: '20px',
-              cursor: 'pointer',
-              marginBottom: '8px'
-            }}
-          >
-            ← 대시보드
-          </button>
-          <h1 style={{ fontSize: '24px', fontWeight: 'bold', margin: 0 }}>
-            설문 통계
-          </h1>
-        </div>
-
-        {/* 전체 통계 */}
-        <div style={{
-          backgroundColor: 'white',
-          padding: '32px',
-          borderRadius: '12px',
-          textAlign: 'center',
-          marginBottom: '24px'
-        }}>
-          <div style={{ fontSize: '48px', marginBottom: '8px' }}>📊</div>
-          <div style={{ fontSize: '14px', color: '#666', marginBottom: '8px' }}>
-            총 설문 참여 수
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <button
+              onClick={() => router.push('/admin/dashboard')}
+              style={{
+                padding: '8px 16px',
+                backgroundColor: '#f1f5f9',
+                color: '#475569',
+                border: '1px solid #e2e8f0',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: '600'
+              }}
+            >
+              ← 대시보드
+            </button>
+            <div>
+              <h1 style={{ fontSize: '24px', fontWeight: '700', color: '#1e293b', margin: 0 }}>
+                설문 통계
+              </h1>
+              <p style={{ fontSize: '13px', color: '#64748b', margin: 0 }}>
+                설문조사 참여 현황 및 결과
+              </p>
+            </div>
           </div>
-          <div style={{ fontSize: '48px', fontWeight: 'bold', color: '#5887FF' }}>
-            {stats?.totalSurveys || 0}
-          </div>
-        </div>
-
-        {/* 타입별 통계 */}
-        <div style={{
-          backgroundColor: 'white',
-          padding: '24px',
-          borderRadius: '12px',
-          marginBottom: '24px'
-        }}>
-          <h2 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '16px' }}>
-            설문 타입별 통계
-          </h2>
           <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-            gap: '16px'
+            padding: '12px 24px',
+            backgroundColor: '#1e3a8a',
+            color: 'white',
+            borderRadius: '6px',
+            fontWeight: '700'
           }}>
-            {stats?.typeStats && Object.entries(stats.typeStats).map(([type, count]: any) => (
-              <div
-                key={type}
-                style={{
-                  padding: '20px',
-                  border: '2px solid #eee',
-                  borderRadius: '12px',
-                  textAlign: 'center'
-                }}
-              >
-                <div style={{ fontSize: '14px', color: '#666', marginBottom: '8px' }}>
-                  {type}
-                </div>
-                <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#5887FF' }}>
-                  {count}
-                </div>
-                <div style={{ fontSize: '12px', color: '#999', marginTop: '4px' }}>
-                  참여
-                </div>
-              </div>
-            ))}
+            총 {totalSurveys}건
           </div>
         </div>
+      </header>
 
-        {/* 최근 설문 목록 */}
-        <div style={{
-          backgroundColor: 'white',
-          padding: '24px',
-          borderRadius: '12px'
-        }}>
-          <h2 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '16px' }}>
-            최근 설문 결과
-          </h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {stats?.recentSurveys?.map((survey: any) => (
-              <div
-                key={survey.id}
-                style={{
-                  padding: '16px',
-                  border: '1px solid #eee',
-                  borderRadius: '8px',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center'
-                }}
-              >
-                <div>
-                  <div style={{ fontWeight: '600', marginBottom: '4px' }}>
-                    {survey.userName}
-                  </div>
-                  <div style={{ fontSize: '14px', color: '#666' }}>
-                    {survey.testType}
-                  </div>
-                </div>
-                <div style={{ fontSize: '12px', color: '#999' }}>
-                  {new Date(survey.createdAt).toLocaleString('ko-KR')}
-                </div>
-              </div>
-            ))}
-          </div>
+      {/* 메인 컨텐츠 */}
+      <main style={{ maxWidth: '1400px', margin: '0 auto', padding: '0 24px 32px' }}>
+        <div style={{ backgroundColor: 'white', borderRadius: '8px', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
+          {loading ? (
+            <div style={{ padding: '60px', textAlign: 'center', color: '#64748b' }}>
+              데이터 로딩 중...
+            </div>
+          ) : (
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
+                  <tr>
+                    <th style={tableHeaderStyle}>번호</th>
+                    <th style={tableHeaderStyle}>참여자</th>
+                    <th style={tableHeaderStyle}>참여일시</th>
+                    <th style={tableHeaderStyle}>점수</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {surveys.map((survey, index) => (
+                    <tr key={survey.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                      <td style={tableCellStyle}>{totalSurveys - index}</td>
+                      <td style={tableCellStyle}>
+                        <strong style={{ color: '#1e293b' }}>{survey.userName}</strong>
+                      </td>
+                      <td style={tableCellStyle}>{formatDate(survey.createdAt)}</td>
+                      <td style={tableCellStyle}>
+                        {survey.scores && Object.keys(survey.scores).length > 0 ? (
+                          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                            {Object.entries(survey.scores).slice(0, 3).map(([key, value]: [string, any]) => (
+                              <span key={key} style={{
+                                padding: '4px 8px',
+                                backgroundColor: '#f1f5f9',
+                                borderRadius: '4px',
+                                fontSize: '12px',
+                                color: '#475569'
+                              }}>
+                                {key}: {value}점
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          <span style={{ color: '#94a3b8' }}>-</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
-      </div>
+      </main>
     </div>
   );
 }
+
+const tableHeaderStyle: React.CSSProperties = {
+  padding: '16px',
+  textAlign: 'left',
+  fontSize: '13px',
+  fontWeight: '700',
+  color: '#475569',
+  textTransform: 'uppercase' as const,
+  letterSpacing: '0.5px'
+};
+
+const tableCellStyle: React.CSSProperties = {
+  padding: '16px',
+  fontSize: '14px',
+  color: '#64748b'
+};

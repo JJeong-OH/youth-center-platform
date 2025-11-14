@@ -19,7 +19,7 @@ export default function SurveyResultPage() {
   const fetchResult = async () => {
     try {
       const token = localStorage.getItem('accessToken');
-      const response = await fetch(`http://localhost:3000/survey/result/${resultId}`, {
+      const response = await fetch(`http://localhost:3000/survey/r  esult/${resultId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -265,4 +265,4 @@ export default function SurveyResultPage() {
       </div>
     </div>
   );
-}
+} 

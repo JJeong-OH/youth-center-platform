@@ -1,0 +1,67 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+  ✨ 1. 'animate-float' 애니메이션 정의
+  (위아래로 떠다니는 효과)
+*/
+@layer utilities {
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-20px); /* 20px 위로 이동 */
+    }
+  }
+  
+  .animate-float {
+    animation: float 6s ease-in-out infinite; /* 6초 동안 부드럽게 반복 */
+  }
+}
+
+/*
+  ✨ 2. 'animate-gradient-bg' 애니메이션 정의
+  (배경색이 천천히 움직이는 효과)
+*/
+@keyframes gradient-bg {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  
+  /* ✨ 3. body에 애니메이션 그라데이션 배경 적용 
+    (파스텔톤의 하늘색, 보라색, 핑크색이 천천히 움직임)
+  */
+  background: linear-gradient(-45deg, #e0f7fa, #e1f5fe, #ede7f6, #fce4ec);
+  background-size: 400% 400%;
+  animation: gradient-bg 15s ease infinite; /* 15초 주기로 배경이 움직임 */
+}
+
+/* 기존 스크롤바 스타일 (유지) */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(0, 0, 0, 0.3);
+}
