@@ -1,4 +1,4 @@
-import type { Program, Facility } from './types';
+import type { Program, Facility } from '../types/types';
 
 export const YOUTH_PROGRAMS: Program[] = [
   {
