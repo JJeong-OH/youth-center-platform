@@ -4,8 +4,10 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
-// ✅ API URL 설정 (한 번만)
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+// ✅ 직접 하드코딩 - 조건부로
+const API_URL = typeof window !== 'undefined' && window.location.hostname === 'localhost'
+  ? 'http://localhost:3001'
+  : 'https://youth-center-platform.onrender.com';
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -14,14 +16,14 @@ export default function AdminLoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // ✅ async 함수로 수정
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
 
     try {
-      // ✅ 올바른 경로: /api/admin/login
+      console.log('🔗 API URL:', API_URL); // ✅ 디버깅용
+      
       const response = await fetch(`${API_URL}/api/admin/login`, {
         method: 'POST',
         headers: {
@@ -65,7 +67,6 @@ export default function AdminLoginPage() {
         maxWidth: '440px',
         border: '1px solid #e2e8f0'
       }}>
-        {/* 로고 영역 */}
         <div style={{ 
           textAlign: 'center', 
           marginBottom: '40px',
