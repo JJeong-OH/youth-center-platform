@@ -4,6 +4,9 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
+// ✅ API URL 설정 (한 번만)
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
 export default function AdminLoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
@@ -11,13 +14,15 @@ export default function AdminLoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // ✅ async 함수로 수정
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
 
     try {
-      const response = await fetch('http://localhost:3001/api/admin/login', {
+      // ✅ 올바른 경로: /api/admin/login
+      const response = await fetch(`${API_URL}/api/admin/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -36,7 +41,7 @@ export default function AdminLoginPage() {
       }
     } catch (error) {
       console.error('로그인 에러:', error);
-      setError('서버 연결에 실패했습니다.');
+      setError('서버 연결에 실패했습니다. 백엔드가 실행 중인지 확인하세요.');
     } finally {
       setLoading(false);
     }
