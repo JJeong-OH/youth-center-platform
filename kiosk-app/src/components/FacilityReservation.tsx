@@ -386,7 +386,7 @@ const CheckReservationView: React.FC<{
     onCancelBooking: (bookingId: string) => void;
 }> = ({ bookings, facilities, onCancelBooking }) => {
     const [phone, setPhone] = useState('');
-    const [pin, setPin] = useState('');
+    // const [pin, setPin] = useState(''); // ⬅️ 'pin' 변수 삭제 (TS6133)
     const [error, setError] = useState('');
     const [userBookings, setUserBookings] = useState<Booking[] | null>(null);
 
@@ -415,7 +415,7 @@ const CheckReservationView: React.FC<{
     const handleLogout = () => {
         setUserBookings(null);
         setPhone('');
-        setPin('');
+        // setPin(''); // ⬅️ 'pin' 변수 삭제 (TS6133)
         setError('');
     };
     
@@ -542,11 +542,11 @@ export const FacilityReservation: React.FC = () => {
 
   const renderView = () => {
     if (isLoading) {
-      return (
-          <div className="flex-grow flex items-center justify-center">
-              <LoadingIcon className="w-12 h-12 text-indigo-500" />
-          </div>
-      );
+        return (
+            <div className="flex-grow flex items-center justify-center">
+                <LoadingIcon className="w-12 h-12 text-indigo-500" />
+            </div>
+        );
     }
 
     switch(viewMode) {

@@ -115,8 +115,8 @@ const ApplicationSuccessModal: React.FC<{
                 
                 <div className="text-left bg-slate-50/80 p-4 rounded-lg border border-slate-200/80 space-y-2 mb-8">
                      <p className="flex items-center gap-2">
-                         <TicketIcon className="w-5 h-5 text-indigo-500"/>
-                         <strong>신청번호:</strong> {application.id}
+                        <TicketIcon className="w-5 h-5 text-indigo-500"/>
+                        <strong>신청번호:</strong> {application.id}
                      </p>
                 </div>
                 <div className="flex justify-center">
@@ -174,7 +174,7 @@ const AIRecommendView: React.FC<{
     const [manualApplicationTarget, setManualApplicationTarget] = useState<Program | null>(null);
     const [recommendedProgramIds, setRecommendedProgramIds] = useState<number[]>([]);
     const [applicationSuccessInfo, setApplicationSuccessInfo] = useState<ProgramApplication | null>(null);
-    const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    // const [errorMessage, setErrorMessage] = useState<string | null>(null); // ⬅️ 'errorMessage', 'setErrorMessage' 변수 삭제 (TS6133)
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -254,7 +254,7 @@ const handleConfirmApplication = useCallback(async (programId: number, details: 
                  const systemMessage: ChatMessage = {
                     role: 'system',
                     text: `AI가 프로그램 신청을 도와드리려 합니다. 오른쪽 카드에서 '신청하기'를 눌러 계속 진행해주세요.`
-                };
+                 };
                  setMessages(prev => [...prev, systemMessage]);
             }
 
@@ -344,8 +344,8 @@ const handleConfirmApplication = useCallback(async (programId: number, details: 
             <div className="md:w-1/2 lg:w-3/5 flex flex-col h-full">
                  <h3 className="text-xl font-bold text-slate-800 mb-4 px-2">
                     {recommendedProgramIds.length > 0 ? '추천 프로그램' : '전체 프로그램 보기'}
-                </h3>
-                <div className="flex-grow overflow-y-auto custom-scrollbar pr-2 -mr-2">
+                 </h3>
+                 <div className="flex-grow overflow-y-auto custom-scrollbar pr-2 -mr-2">
                     <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
                         {programsToDisplay.map(program => (
                             <ProgramCard 
@@ -355,7 +355,7 @@ const handleConfirmApplication = useCallback(async (programId: number, details: 
                             />
                         ))}
                     </div>
-                </div>
+                 </div>
             </div>
             
             {manualApplicationTarget && (
@@ -381,7 +381,7 @@ const CheckApplicationView: React.FC<{
     onCancelApplication: (applicationId: string) => void;
 }> = ({ programs, applications, onCancelApplication }) => {
     const [phone, setPhone] = useState('');
-    const [pin, setPin] = useState('');
+    // const [pin, setPin] = useState(''); // ⬅️ 'pin' 변수 삭제 (TS6133)
     const [error, setError] = useState('');
     const [userApplications, setUserApplications] = useState<ProgramApplication[] | null>(null);
 
@@ -408,7 +408,7 @@ const CheckApplicationView: React.FC<{
     const handleLogout = () => {
         setUserApplications(null);
         setPhone('');
-        setPin('');
+        // setPin(''); // ⬅️ 'pin' 변수 삭제 (TS6133)
         setError('');
     };
 
@@ -561,7 +561,7 @@ export const ProgramRecommendation: React.FC = () => {
                         className={`px-4 py-2 text-sm font-semibold rounded-lg transition-colors duration-200 flex items-center gap-2 ${viewMode === 'recommend' ? 'bg-indigo-500 text-white shadow' : 'text-slate-600 hover:bg-white/50'}`}
                     >
                         <SparklesIcon className="w-5 h-5" />
-                        AI 추천/신청    
+                        AI 추천/신청      
                     </button>
                     <button
                         onClick={() => setViewMode('check')}
@@ -571,7 +571,7 @@ export const ProgramRecommendation: React.FC = () => {
                         신청 현황 확인
                     </button>
                 </div>
-            </div>
+             </div>
 
             {notification && (
                 <div className={`px-4 py-3 rounded-xl mb-4 flex items-center gap-3 text-sm ${notification.type === 'success' ? 'bg-green-100 border border-green-300 text-green-800' : 'bg-red-100 border border-red-300 text-red-800'}`}>

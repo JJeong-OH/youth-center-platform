@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import type { View } from './types/types';
 import { Landing } from './components/Landing';
 import { Header } from './components/Header';
