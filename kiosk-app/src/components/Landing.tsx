@@ -1,6 +1,7 @@
 import React from 'react';
 import type { View } from '../types/types';
 
+// ... 기존 imports (이미지들)
 import logoUrl from '/src/assets/react.svg';
 import mainBotUrl from '/src/assets/image.png';
 import counselBotUrl from '/src/assets/image1.png';
@@ -9,7 +10,7 @@ import facilityBotUrl from '/src/assets/image3.png';
 
 interface LandingProps {
   onStart: (view: View) => void;
-  onCheckReservation?: () => void;
+  onCheckReservation?: () => void;  // ✅ 추가
 }
 
 const ActionCard: React.FC<{
@@ -53,16 +54,15 @@ export const Landing: React.FC<LandingProps> = ({ onStart, onCheckReservation })
           </div>
         </header>
 
-        {/* ✅ 메인 콘텐츠 - 세로 모드 최적화 */}
-        <div className="w-full max-w-7xl mx-auto mb-16">
-          {/* 타이틀 영역 */}
-          <div className="flex flex-col gap-4 text-center items-center transition-all duration-300 hover:scale-105 mb-8">
-            <div className="flex flex-col md:flex-row items-center gap-4">
+        {/* 메인 콘텐츠 */}
+        <div className="w-full max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 items-center gap-8 mb-16">
+          <div className="flex flex-col gap-4 text-center md:text-left items-center md:items-start transition-all duration-300 hover:scale-105">
+            <div className="flex items-center gap-4">
               <div
                 className="
                   bg-gradient-to-r from-blue-600 to-purple-500 
                   text-transparent bg-clip-text
-                  font-black text-7xl md:text-9xl
+                  font-black text-9xl
                 "
                 style={{
                   backgroundSize: '200% 200%',
@@ -72,7 +72,7 @@ export const Landing: React.FC<LandingProps> = ({ onStart, onCheckReservation })
                 AI
               </div>
               
-              <h1 className="text-5xl md:text-7xl font-black text-slate-900 leading-tight text-center md:text-left">
+              <h1 className="text-7xl font-black text-slate-900 leading-tight">
                 청소년
                 <br />
                 키오스크
@@ -84,19 +84,17 @@ export const Landing: React.FC<LandingProps> = ({ onStart, onCheckReservation })
             </p>
           </div>
 
-          {/* ✅ 로봇 이미지 영역 - 세로 모드에서 겹침 방지 */}
-          <div className="flex items-center justify-center relative mb-12" style={{ minHeight: '300px' }}>
+          <div className="flex items-center justify-center relative">
             <div className="absolute w-64 h-64 bg-blue-400 rounded-full opacity-40 blur-3xl"></div>
             
-            {/* ✅ 말풍선 위치 조정 */}
-            <div className="absolute top-0 right-4 md:right-10 bg-blue-500 text-white text-lg font-semibold px-6 py-3 rounded-full rounded-tr-none shadow-lg z-20">
+            <div className="absolute top-0 right-0 md:right-10 bg-blue-500 text-white text-lg font-semibold px-6 py-3 rounded-full rounded-tr-none shadow-lg">
               안녕하세요!
             </div>
             
             <img
               src={mainBotUrl}
               alt="AI 키오스크 메인 로봇"
-              className="w-full max-w-sm md:max-w-md h-auto relative z-10 animate-float mt-16"
+              className="w-full max-w-md h-auto relative z-10 animate-float"
             />
           </div>
         </div>
@@ -120,7 +118,7 @@ export const Landing: React.FC<LandingProps> = ({ onStart, onCheckReservation })
           />
         </div>
 
-        {/* 예약확인 버튼 */}
+        {/* ✅ 예약확인 버튼 추가 */}
         {onCheckReservation && (
           <div style={{
             position: 'fixed',
