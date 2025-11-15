@@ -9,6 +9,7 @@ interface Facility {
   icon: string;
   description: string | null;
   capacity: number | null;
+  floor: string | null;  // ✅ 추가
   isActive: boolean;
   order: number;
 }
@@ -20,7 +21,6 @@ export default function FacilitiesPage() {
   const [showModal, setShowModal] = useState(false);
   const [editingFacility, setEditingFacility] = useState<Facility | null>(null);
   
-  // ✅ 이미지 업로드 관련 state 추가
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
   const [useEmoji, setUseEmoji] = useState(true);
@@ -30,6 +30,7 @@ export default function FacilitiesPage() {
     icon: '🏢',
     description: '',
     capacity: '',
+    floor: '지하1층',  // ✅ 추가
     order: '0',
   });
 
@@ -65,6 +66,7 @@ export default function FacilitiesPage() {
       icon: '🏢',
       description: '',
       capacity: '',
+      floor: '지하1층',  // ✅ 추가
       order: '0',
     });
     setImageFile(null);
@@ -80,10 +82,10 @@ export default function FacilitiesPage() {
       icon: facility.icon,
       description: facility.description || '',
       capacity: facility.capacity?.toString() || '',
+      floor: facility.floor || '지하1층',  // ✅ 추가
       order: facility.order.toString(),
     });
 
-    // 이미지인지 이모지인지 확인
     if (facility.icon.startsWith('/') || facility.icon.startsWith('http')) {
       setUseEmoji(false);
       setImagePreview(facility.icon);
@@ -95,13 +97,10 @@ export default function FacilitiesPage() {
     setShowModal(true);
   };
 
-  // ✅ 이미지 파일 선택 핸들러
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setImageFile(file);
-      
-      // 미리보기 생성
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreview(reader.result as string);
@@ -128,14 +127,13 @@ export default function FacilitiesPage() {
     const method = editingFacility ? 'PUT' : 'POST';
     
     try {
-      // ✅ FormData 사용 (이미지 업로드 지원)
       const formDataToSend = new FormData();
       formDataToSend.append('name', formData.name);
       formDataToSend.append('description', formData.description);
       formDataToSend.append('capacity', formData.capacity);
+      formDataToSend.append('floor', formData.floor);  // ✅ 추가
       formDataToSend.append('order', formData.order);
 
-      // 이미지 또는 이모지
       if (useEmoji) {
         formDataToSend.append('icon', formData.icon);
       } else if (imageFile) {
@@ -146,7 +144,6 @@ export default function FacilitiesPage() {
         method,
         headers: { 
           'Authorization': `Bearer ${token}`
-          // ✅ Content-Type 제거 (FormData가 자동으로 설정)
         },
         body: formDataToSend,
       });
@@ -218,7 +215,6 @@ export default function FacilitiesPage() {
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f8fafc' }}>
-      {/* 헤더 */}
       <header style={{
         backgroundColor: 'white',
         borderBottom: '1px solid #e2e8f0',
@@ -281,7 +277,6 @@ export default function FacilitiesPage() {
         </div>
       </header>
 
-      {/* 메인 컨텐츠 */}
       <main style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px 32px' }}>
         <div style={{ backgroundColor: 'white', borderRadius: '8px', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
           {loading ? (
@@ -295,6 +290,7 @@ export default function FacilitiesPage() {
                   <th style={tableHeaderStyle}>순서</th>
                   <th style={tableHeaderStyle}>아이콘</th>
                   <th style={tableHeaderStyle}>시설명</th>
+                  <th style={tableHeaderStyle}>층</th>
                   <th style={tableHeaderStyle}>수용인원</th>
                   <th style={tableHeaderStyle}>설명</th>
                   <th style={tableHeaderStyle}>상태</th>
@@ -306,7 +302,6 @@ export default function FacilitiesPage() {
                   <tr key={facility.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
                     <td style={tableCellStyle}>{facility.order}</td>
                     <td style={tableCellStyle}>
-                      {/* ✅ 이미지 또는 이모지 표시 */}
                       {facility.icon.startsWith('/') || facility.icon.startsWith('http') ? (
                         <img 
                           src={`${API_URL}${facility.icon}`}
@@ -325,6 +320,7 @@ export default function FacilitiesPage() {
                     <td style={tableCellStyle}>
                       <strong style={{ color: '#1e293b' }}>{facility.name}</strong>
                     </td>
+                    <td style={tableCellStyle}>{facility.floor || '-'}</td>
                     <td style={tableCellStyle}>{facility.capacity || '-'}명</td>
                     <td style={tableCellStyle}>{facility.description || '-'}</td>
                     <td style={tableCellStyle}>
@@ -387,7 +383,6 @@ export default function FacilitiesPage() {
         </div>
       </main>
 
-      {/* ✅ 모달 (이미지 업로드 추가) */}
       {showModal && (
         <div style={{
           position: 'fixed',
@@ -427,7 +422,6 @@ export default function FacilitiesPage() {
                 />
               </div>
 
-              {/* ✅ 아이콘 타입 선택 */}
               <div style={{ marginBottom: '16px' }}>
                 <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#475569', fontSize: '14px' }}>아이콘 타입</label>
                 <div style={{ display: 'flex', gap: '12px', marginBottom: '12px' }}>
@@ -467,7 +461,6 @@ export default function FacilitiesPage() {
                   </button>
                 </div>
 
-                {/* ✅ 이모지 입력 */}
                 {useEmoji && (
                   <input
                     type="text"
@@ -486,7 +479,6 @@ export default function FacilitiesPage() {
                   />
                 )}
 
-                {/* ✅ 이미지 업로드 */}
                 {!useEmoji && (
                   <div>
                     <input
@@ -502,7 +494,6 @@ export default function FacilitiesPage() {
                         backgroundColor: '#f8fafc'
                       }}
                     />
-                    {/* 미리보기 */}
                     {imagePreview && (
                       <div style={{ 
                         marginTop: '12px', 
@@ -535,6 +526,19 @@ export default function FacilitiesPage() {
                   onChange={(e) => setFormData({ ...formData, capacity: e.target.value })}
                   style={inputStyle}
                 />
+              </div>
+
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#475569', fontSize: '14px' }}>층</label>
+                <select
+                  value={formData.floor}
+                  onChange={(e) => setFormData({ ...formData, floor: e.target.value })}
+                  style={inputStyle}
+                >
+                  <option value="지하1층">지하1층</option>
+                  <option value="3층">3층</option>
+                  <option value="4층">4층</option>
+                </select>
               </div>
 
               <div style={{ marginBottom: '16px' }}>

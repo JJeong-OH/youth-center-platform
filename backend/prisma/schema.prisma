@@ -103,19 +103,17 @@ model ProgramApplication {
 }
 
 model Facility {
-  id          String   @id @default(uuid())
+  id          String    @id @default(cuid())
   name        String
-  icon        String   @default("🏢")
-  description String?  @db.Text
+  icon        String    @default("🏢")
+  description String?
   capacity    Int?
-  isActive    Boolean  @default(true) @map("is_active")
-  order       Int      @default(0)
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-  
+  floor       String?   // ✅ 추가: 지하1층, 3층, 4층
+  isActive    Boolean   @default(true)
+  order       Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
   bookings    Booking[]
-  
-  @@map("facilities")
 }
 
 model Booking {

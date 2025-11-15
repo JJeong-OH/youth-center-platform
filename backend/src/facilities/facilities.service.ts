@@ -47,12 +47,13 @@ export class FacilitiesService {
     };
   }
 
-  // 시설 생성
+  // ✅ 시설 생성 (floor 추가)
   async createFacility(data: {
     name: string;
     icon?: string;
     description?: string;
     capacity?: number;
+    floor?: string;  // ✅ 추가
     order?: number;
   }) {
     const facility = await prisma.facility.create({
@@ -61,6 +62,7 @@ export class FacilitiesService {
         icon: data.icon || '🏢',
         description: data.description,
         capacity: data.capacity,
+        floor: data.floor,  // ✅ 추가
         order: data.order || 0,
         isActive: true,
       },
@@ -73,7 +75,7 @@ export class FacilitiesService {
     };
   }
 
-  // 시설 수정
+  // ✅ 시설 수정 (floor 추가)
   async updateFacility(
     id: string,
     data: {
@@ -81,6 +83,7 @@ export class FacilitiesService {
       icon?: string;
       description?: string;
       capacity?: number;
+      floor?: string;  // ✅ 추가
       order?: number;
       isActive?: boolean;
     },

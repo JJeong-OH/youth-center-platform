@@ -138,10 +138,10 @@ export default function AdminLoginPage() {
               아이디 {/* ✅ 이메일 → 아이디 */}
             </label>
             <input
-              type="text" {/* ✅ email → text */}
+              type="text"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="admin" {/* ✅ placeholder 변경 */}
+              placeholder="admin" 
               required
               style={{
                 width: '100%',

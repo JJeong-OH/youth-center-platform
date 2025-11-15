@@ -1,19 +1,19 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { UsersIcon, CheckCircleIcon, XCircleIcon, CalendarIcon, TicketIcon, LoadingIcon, UserIcon, PhoneIcon } from './Icons';
+import { BackButton } from './BackButton';  // ✅ 추가
 
-// ✅ API URL 자동 설정 (로컬/배포 자동 전환)
 const API_URL = typeof window !== 'undefined' && window.location.hostname === 'localhost'
   ? 'http://localhost:3001'
   : 'https://youth-center-platform.onrender.com';
 
-// ✅ 타입 정의
 type Facility = {
   id: string;
   name: string;
   icon: string;
   description: string | null;
   capacity: number | null;
+  floor: string | null;  // ✅ 추가
   isActive: boolean;
 };
 
@@ -34,7 +34,6 @@ type Booking = {
   };
 };
 
-// Generate hourly time slots from 9:00 to 18:00
 const TIME_SLOTS = Array.from({ length: 9 }, (_, i) => {
     const startHour = i + 9;
     const endHour = startHour + 1;
@@ -128,8 +127,6 @@ const BookingModal: React.FC<{
 };
 
 const BookingSuccessModal: React.FC<{ bookings: Booking[]; onClose: () => void }> = ({ bookings, onClose }) => {
-    console.log('📋 성공 모달 - 예약 데이터:', bookings);
-    
     const firstBooking = bookings[0];
     const facilityName = firstBooking?.facility?.name || '알 수 없음';
     const userName = firstBooking?.user_name || '알 수 없음';
@@ -153,11 +150,7 @@ const BookingSuccessModal: React.FC<{ bookings: Booking[]; onClose: () => void }
                     <p><strong>시간대:</strong></p>
                     <div className="flex flex-wrap gap-1 mt-2">
                       {bookings.map(booking => {
-                        if (!booking.time_slot) {
-                            console.warn('⚠️ timeSlot 없음:', booking);
-                            return null;
-                        }
-                        
+                        if (!booking.time_slot) return null;
                         const timeDisplay = booking.time_slot.split('-')[0];
                         return (
                           <span key={booking.id} className="inline-block bg-indigo-100 text-indigo-700 px-2 py-1 rounded text-xs font-semibold">
@@ -194,7 +187,6 @@ const FacilityCard: React.FC<{
     bookingsForDate.map(b => b.time_slot)
   );
   
-  // ✅ 전화번호로 기존 예약 개수 확인
   const checkExistingBookings = async (phone: string) => {
     if (phone.length >= 10) {
       try {
@@ -224,7 +216,6 @@ const FacilityCard: React.FC<{
       if (prev.includes(timeSlot)) {
         return prev.filter(t => t !== timeSlot);
       } else {
-        // ✅ 최대 선택 가능 개수 체크
         const maxSelectable = 2 - existingBookingsCount;
         if (prev.length >= maxSelectable) {
           alert(`같은 날, 같은 실습실은 최대 2시간까지만 예약 가능합니다.\n현재 ${existingBookingsCount}개 예약됨`);
@@ -251,7 +242,6 @@ const FacilityCard: React.FC<{
     <div className="bg-white/70 backdrop-blur-xl rounded-2xl shadow-lg border border-white/30 p-5 overflow-hidden transition-all duration-300">
       <div className="flex flex-col sm:flex-row gap-5">
         <div className="w-full sm:w-40 h-40 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-lg flex items-center justify-center text-6xl flex-shrink-0 overflow-hidden">
-          {/* ✅ 이미지 또는 이모지 */}
           {facility.icon.startsWith('/') || facility.icon.startsWith('http') ? (
             <img 
               src={facility.icon.startsWith('/') ? `${API_URL}${facility.icon}` : facility.icon}
@@ -268,6 +258,12 @@ const FacilityCard: React.FC<{
         </div>
         <div className="flex flex-col flex-grow">
           <h3 className="text-xl font-bold text-slate-800">{facility.name}</h3>
+          {/* ✅ 층 정보 표시 */}
+          {facility.floor && (
+            <div className="text-sm font-semibold text-purple-600 mt-1">
+              📍 {facility.floor}
+            </div>
+          )}
           <div className="text-sm font-semibold text-slate-500 my-1 flex items-center gap-1.5">
             <UsersIcon className="w-4 h-4" />
             <span>최대 {facility.capacity}명</span>
@@ -285,7 +281,6 @@ const FacilityCard: React.FC<{
       </div>
       {isExpanded && (
         <div className="mt-4 pt-4 border-t border-slate-200/80">
-          {/* ✅ 전화번호 입력 */}
           <div className="mb-4">
             <label className="block text-sm font-semibold text-slate-700 mb-2">
               전화번호 입력 (예약 확인용)
@@ -302,7 +297,6 @@ const FacilityCard: React.FC<{
             />
           </div>
 
-          {/* ✅ 예약 가능 횟수 표시 */}
           {existingBookingsCount > 0 && (
             <div className="mb-4 p-3 bg-yellow-100 border border-yellow-300 rounded-lg text-sm text-yellow-800">
               ⚠️ 오늘 이 실습실을 {existingBookingsCount}시간 예약하셨습니다.
@@ -372,6 +366,7 @@ const FacilityCard: React.FC<{
   );
 };
 
+// ✅ 층별로 그룹화된 NewReservationView
 const NewReservationView: React.FC<{ 
   facilities: Facility[];
   bookings: Booking[], 
@@ -382,6 +377,20 @@ const NewReservationView: React.FC<{
     const [bookingSlot, setBookingSlot] = useState<{ facility: Facility; timeSlots: string[] } | null>(null);
     const [successInfo, setSuccessInfo] = useState<Booking[]>([]);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+    // ✅ 층별로 그룹화
+    const facilitiesByFloor = facilities.reduce((acc, facility) => {
+      const floor = facility.floor || '기타';
+      if (!acc[floor]) {
+        acc[floor] = [];
+      }
+      acc[floor].push(facility);
+      return acc;
+    }, {} as Record<string, Facility[]>);
+
+    // ✅ 층 순서 정의
+    const floorOrder = ['지하1층', '3층', '4층', '기타'];
+    const sortedFloors = floorOrder.filter(floor => facilitiesByFloor[floor]);
 
     const handleConfirmBooking = async (details: { userName: string; phoneNumber: string; pin: string; date: string; timeSlots: string[] }) => {
         if (!bookingSlot) return;
@@ -398,9 +407,6 @@ const NewReservationView: React.FC<{
                     phone: details.phoneNumber,
                 };
                 
-                console.log('📤 예약 요청:', bookingPayload);
-                
-                // ✅ API 호출
                 const response = await fetch(`${API_URL}/api/kiosk/bookings`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -408,13 +414,11 @@ const NewReservationView: React.FC<{
                 });
                 
                 const result = await response.json();
-                console.log('📥 예약 응답:', result);
                 
                 if (!result.success) {
                     throw new Error(result.error || result.message || '예약에 실패했습니다.');
                 }
                 
-                // ✅ 데이터 변환
                 const booking: Booking = {
                     id: result.data.id,
                     facility_id: result.data.facility_id,
@@ -475,18 +479,47 @@ const NewReservationView: React.FC<{
               </div>
             )}
 
-            <div className="flex-grow overflow-y-auto custom-scrollbar -mr-2 pr-2">
-                <div className="space-y-4">
-                    {facilities.map(facility => (
-                        <FacilityCard
-                            key={facility.id}
-                            facility={facility}
-                            bookings={bookings}
-                            selectedDate={selectedDate}
-                            onBook={(facility, timeSlots) => setBookingSlot({ facility, timeSlots })}
-                        />
+            {/* ✅ 층별로 표시 */}
+            <div style={{ 
+              display: 'flex', 
+              flexDirection: 'column', 
+              gap: '24px',
+              marginBottom: '140px'  // 뒤로가기 버튼 공간
+            }}>
+              {sortedFloors.map(floor => (
+                <div key={floor}>
+                  {/* 층 헤더 */}
+                  <h3 style={{
+                    fontSize: '22px',
+                    fontWeight: '700',
+                    marginBottom: '16px',
+                    padding: '12px 16px',
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    color: 'white',
+                    borderRadius: '12px',
+                    textAlign: 'center'
+                  }}>
+                    📍 {floor}
+                  </h3>
+
+                  {/* 실습실 그리드 */}
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: `repeat(auto-fit, minmax(300px, 1fr))`,
+                    gap: '16px'
+                  }}>
+                    {facilitiesByFloor[floor].map(facility => (
+                      <FacilityCard
+                        key={facility.id}
+                        facility={facility}
+                        bookings={bookings}
+                        selectedDate={selectedDate}
+                        onBook={(facility, timeSlots) => setBookingSlot({ facility, timeSlots })}
+                      />
                     ))}
+                  </div>
                 </div>
+              ))}
             </div>
 
             {bookingSlot && (
@@ -551,7 +584,7 @@ const CheckReservationView: React.FC<{
 
     if (userBookings) {
         return (
-             <div className="flex-grow overflow-y-auto p-2 custom-scrollbar -mr-2">
+             <div className="flex-grow overflow-y-auto p-2 custom-scrollbar -mr-2" style={{ marginBottom: '140px' }}>
                  <div className="flex justify-between items-center mb-4">
                     <h3 className="text-xl font-bold text-slate-800">나의 예약 내역</h3>
                     <button onClick={handleLogout} className="text-sm font-semibold hover:underline text-slate-600">다른 예약 조회</button>
@@ -612,7 +645,8 @@ const CheckReservationView: React.FC<{
     );
 };
 
-export const FacilityReservation: React.FC = () => {
+// ✅ 메인 컴포넌트에 onBack props 추가
+export const FacilityReservation: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const [facilities, setFacilities] = useState<Facility[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -621,7 +655,6 @@ export const FacilityReservation: React.FC = () => {
   
   const fetchData = async () => {
     try {
-        // ✅ API 호출
         const [facilitiesResponse, bookingsResponse] = await Promise.all([
           fetch(`${API_URL}/api/kiosk/facilities`),
           fetch(`${API_URL}/api/kiosk/bookings`)
@@ -658,7 +691,6 @@ export const FacilityReservation: React.FC = () => {
     if (!bookingToCancel) return;
     
     try {
-        // ✅ API 호출
         const response = await fetch(`${API_URL}/api/kiosk/bookings/${bookingId}`, {
             method: 'DELETE',
         });
@@ -735,6 +767,9 @@ export const FacilityReservation: React.FC = () => {
       )}
       
       {renderView()}
+
+      {/* ✅ 뒤로가기 버튼 */}
+      {onBack && <BackButton onClick={onBack} label="← 메인으로 돌아가기" />}
     </div>
   );
 };

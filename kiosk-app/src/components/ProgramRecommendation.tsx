@@ -4,6 +4,7 @@ import { sendMessageToRecommender } from '../services/geminiService';
 import { getPrograms, getApplications, addApplication as addApplicationService, deleteApplication as deleteApplicationService } from '../services/googleSheetsService';
 import type { ChatMessage, Program, ProgramApplication } from '../types/types';
 import { UserIcon, ChatBotIcon, SendIcon, LoadingIcon, CheckCircleIcon, XCircleIcon, InfoIcon, SparklesIcon, TicketIcon, ClipboardListIcon, PhoneIcon } from './Icons';
+import { BackButton } from './BackButton';  // ✅ 추가
 
 const ProgramApplicationModal: React.FC<{
   program: Program | null;
@@ -78,13 +79,11 @@ const ProgramApplicationModal: React.FC<{
         </div>
     );
 };
+
 const ApplicationSuccessModal: React.FC<{
   application: ProgramApplication;
   onClose: () => void;
 }> = ({ application, onClose }) => {
-    console.log('📋 모달 데이터:', application); // ✅ 디버깅
-    
-    // ✅ 여러 필드 확인
     const userName = application.userName || 
                      (application as any).applicant_name || 
                      (application as any).user_name || 
@@ -92,8 +91,6 @@ const ApplicationSuccessModal: React.FC<{
     
     const isWaiting = (application as any).isWaiting;
     const waitingNumber = (application as any).waitingNumber;
-    
-    console.log('👤 표시할 이름:', userName); // ✅ 디버깅
     
     return (
         <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -132,7 +129,6 @@ const ApplicationSuccessModal: React.FC<{
     );
 };
 
-// ✅ 전화번호 중복만 체크하도록 수정
 const ProgramCard: React.FC<{ program: Program, onApply: (program: Program) => void }> = ({ program, onApply }) => (
     <div className="bg-white/70 backdrop-blur-xl rounded-2xl shadow-lg border border-white/30 p-5 flex flex-col transition-all duration-300 hover:shadow-xl hover:border-white">
         <h3 className="text-lg font-bold text-slate-800">{program.title}</h3>
@@ -174,71 +170,65 @@ const AIRecommendView: React.FC<{
     const [manualApplicationTarget, setManualApplicationTarget] = useState<Program | null>(null);
     const [recommendedProgramIds, setRecommendedProgramIds] = useState<number[]>([]);
     const [applicationSuccessInfo, setApplicationSuccessInfo] = useState<ProgramApplication | null>(null);
-    // const [errorMessage, setErrorMessage] = useState<string | null>(null); // ⬅️ 'errorMessage', 'setErrorMessage' 변수 삭제 (TS6133)
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
 
-const handleConfirmApplication = useCallback(async (programId: number, details: { userName: string; phoneNumber: string; pin: string }) => {
-    const program = programs.find(p => p.id === programId);
-    if (!program) return;
-    
-    try {
-        // ✅ 전화번호 중복 체크
-        const alreadyApplied = applications.some(
-            app => Number(app.programId) === programId && app.phone === details.phoneNumber
-        );
+    const handleConfirmApplication = useCallback(async (programId: number, details: { userName: string; phoneNumber: string; pin: string }) => {
+        const program = programs.find(p => p.id === programId);
+        if (!program) return;
         
-        if (alreadyApplied) {
+        try {
+            const alreadyApplied = applications.some(
+                app => Number(app.programId) === programId && app.phone === details.phoneNumber
+            );
+            
+            if (alreadyApplied) {
+                const systemMessage: ChatMessage = {
+                    role: 'system',
+                    text: `이미 이 전화번호(${details.phoneNumber})로 '${program.title}' 프로그램을 신청하셨습니다.`
+                };
+                setMessages(prev => [...prev, systemMessage]);
+                setManualApplicationTarget(null);
+                return;
+            }
+
+            const newApplicationData = {
+                programId,
+                userName: details.userName,
+                phone: details.phoneNumber,
+            };
+            
+            const newApplication = await addApplicationService(newApplicationData);
+            
+            const appWithUserName = {
+                ...newApplication,
+                userName: details.userName
+            };
+            
+            onNewApplication(appWithUserName);
+
             const systemMessage: ChatMessage = {
                 role: 'system',
-                text: `이미 이 전화번호(${details.phoneNumber})로 '${program.title}' 프로그램을 신청하셨습니다.`
+                text: `${details.userName}님의 '${program.title}' 신청이 완료되었습니다.`
+            };
+            setMessages(prev => [...prev, systemMessage]);
+
+            setManualApplicationTarget(null);
+            setApplicationSuccessInfo(appWithUserName);
+        } catch (error: any) {
+            console.error("Failed to submit application", error);
+            const systemMessage: ChatMessage = { 
+                role: 'system', 
+                text: error.message || `'${program.title}' 프로그램 신청 중 오류가 발생했습니다.`
             };
             setMessages(prev => [...prev, systemMessage]);
             setManualApplicationTarget(null);
-            return;
         }
+    }, [programs, applications, onNewApplication]);
 
-        const newApplicationData = {
-            programId,
-            userName: details.userName, // ✅ userName 전달
-            phone: details.phoneNumber,
-        };
-        
-        console.log('📤 신청 데이터:', newApplicationData); // ✅ 디버깅
-        
-        const newApplication = await addApplicationService(newApplicationData);
-        
-        console.log('📥 신청 결과:', newApplication); // ✅ 디버깅
-        
-        // ✅ userName 확인
-        const appWithUserName = {
-            ...newApplication,
-            userName: details.userName // ✅ 명시적으로 설정
-        };
-        
-        onNewApplication(appWithUserName);
-
-        const systemMessage: ChatMessage = {
-            role: 'system',
-            text: `${details.userName}님의 '${program.title}' 신청이 완료되었습니다.`
-        };
-        setMessages(prev => [...prev, systemMessage]);
-
-        setManualApplicationTarget(null);
-        setApplicationSuccessInfo(appWithUserName); // ✅ userName 포함된 객체 전달
-    } catch (error: any) {
-        console.error("Failed to submit application", error);
-        const systemMessage: ChatMessage = { 
-            role: 'system', 
-            text: error.message || `'${program.title}' 프로그램 신청 중 오류가 발생했습니다.`
-        };
-        setMessages(prev => [...prev, systemMessage]);
-        setManualApplicationTarget(null);
-    }
-}, [programs, applications, onNewApplication]);
     const handleSendMessage = useCallback(async () => {
         if (input.trim() === '' || isChatLoading) return;
 
@@ -279,14 +269,18 @@ const handleConfirmApplication = useCallback(async (programId: number, details: 
     const cancelApplication = () => {
         setManualApplicationTarget(null);
     };
-    
-    const programsToDisplay = recommendedProgramIds.length > 0
+        const programsToDisplay = recommendedProgramIds.length > 0
         ? programs.filter(p => recommendedProgramIds.includes(p.id))
         : programs;
 
     return (
-        <div className="flex flex-col md:flex-row h-full gap-6">
-            <div className="md:w-1/2 lg:w-2/5 flex flex-col h-full">
+        // ✅ 세로 모드: flex-col, 가로 모드(lg): flex-row
+        <div className="flex flex-col lg:flex-row h-full gap-6" style={{ paddingBottom: '160px' }}>
+            {/* 채팅 영역 */}
+            <div className="w-full lg:w-2/5 flex flex-col" style={{ 
+                minHeight: '300px', 
+                maxHeight: '50vh'  // ✅ 세로 모드에서 높이 제한
+            }}>
                 <h3 className="text-xl font-bold text-slate-800 mb-4 px-2 flex items-center gap-2">
                     <SparklesIcon className="w-6 h-6" />
                     AI 추천 채팅
@@ -341,12 +335,13 @@ const handleConfirmApplication = useCallback(async (programId: number, details: 
                 </div>
             </div>
             
-            <div className="md:w-1/2 lg:w-3/5 flex flex-col h-full">
+            {/* ✅ 프로그램 목록 영역 - 세로 모드에서도 표시 */}
+            <div className="w-full lg:w-3/5 flex flex-col" style={{ minHeight: '300px' }}>
                  <h3 className="text-xl font-bold text-slate-800 mb-4 px-2">
                     {recommendedProgramIds.length > 0 ? '추천 프로그램' : '전체 프로그램 보기'}
                  </h3>
                  <div className="flex-grow overflow-y-auto custom-scrollbar pr-2 -mr-2">
-                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 pb-4">
                         {programsToDisplay.map(program => (
                             <ProgramCard 
                                 key={program.id} 
@@ -381,7 +376,6 @@ const CheckApplicationView: React.FC<{
     onCancelApplication: (applicationId: string) => void;
 }> = ({ programs, applications, onCancelApplication }) => {
     const [phone, setPhone] = useState('');
-    // const [pin, setPin] = useState(''); // ⬅️ 'pin' 변수 삭제 (TS6133)
     const [error, setError] = useState('');
     const [userApplications, setUserApplications] = useState<ProgramApplication[] | null>(null);
 
@@ -408,7 +402,6 @@ const CheckApplicationView: React.FC<{
     const handleLogout = () => {
         setUserApplications(null);
         setPhone('');
-        // setPin(''); // ⬅️ 'pin' 변수 삭제 (TS6133)
         setError('');
     };
 
@@ -420,7 +413,7 @@ const CheckApplicationView: React.FC<{
 
     if (userApplications) {
         return (
-             <div className="flex-grow overflow-y-auto p-2 custom-scrollbar -mr-2">
+             <div className="flex-grow overflow-y-auto p-2 custom-scrollbar -mr-2" style={{ marginBottom: '140px' }}>
                  <div className="flex justify-between items-center mb-4">
                     <h3 className="text-xl font-bold text-slate-800">나의 신청 내역</h3>
                     <button onClick={handleLogout} className="text-sm font-semibold hover:underline text-slate-600">다른 정보로 조회</button>
@@ -481,7 +474,8 @@ const CheckApplicationView: React.FC<{
     );
 };
 
-export const ProgramRecommendation: React.FC = () => {
+// ✅ 메인 컴포넌트에 onBack props 추가
+export const ProgramRecommendation: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     const [programs, setPrograms] = useState<Program[]>([]);
     const [isDataLoading, setIsDataLoading] = useState(true);
     const [applications, setApplications] = useState<ProgramApplication[]>([]);
@@ -583,6 +577,9 @@ export const ProgramRecommendation: React.FC = () => {
             <div className="flex-grow overflow-hidden">
                 {renderView()}
             </div>
+
+            {/* ✅ 뒤로가기 버튼 */}
+            {onBack && <BackButton onClick={onBack} label="← 메인으로 돌아가기" />}
         </div>
     );
 };

@@ -60,13 +60,12 @@ export class FacilitiesController {
     return this.facilitiesService.getFacilityById(id);
   }
 
-  // ✅ 시설 생성 (타입 수정)
   @Post()
   @UseGuards(AdminGuard)
   @UseInterceptors(FileInterceptor('image'))
   async createFacility(
     @Body() body: any,
-    @UploadedFile() file?: any,  // ✅ any로 변경
+    @UploadedFile() file?: any,
   ) {
     try {
       const icon = file 
@@ -78,6 +77,7 @@ export class FacilitiesController {
         icon,
         description: body.description,
         capacity: body.capacity ? parseInt(body.capacity) : undefined,
+        floor: body.floor || null,  // ✅ 추가
         order: body.order ? parseInt(body.order) : 0,
       });
     } catch (error) {
@@ -88,20 +88,20 @@ export class FacilitiesController {
     }
   }
 
-  // ✅ 시설 수정 (타입 수정)
   @Put(':id')
   @UseGuards(AdminGuard)
   @UseInterceptors(FileInterceptor('image'))
   async updateFacility(
     @Param('id') id: string,
     @Body() body: any,
-    @UploadedFile() file?: any,  // ✅ any로 변경
+    @UploadedFile() file?: any,
   ) {
     try {
       const updateData: any = {
         name: body.name,
         description: body.description,
         capacity: body.capacity ? parseInt(body.capacity) : undefined,
+        floor: body.floor || null,  // ✅ 추가
         order: body.order ? parseInt(body.order) : 0,
       };
 
