@@ -1,8 +1,38 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import type { Facility, Booking } from '../types/types';
-import { getFacilities, getBookings, addBooking as addBookingService, deleteBooking as deleteBookingService } from '../services/googleSheetsService';
 import { UsersIcon, CheckCircleIcon, XCircleIcon, CalendarIcon, TicketIcon, LoadingIcon, UserIcon, PhoneIcon } from './Icons';
+
+// ✅ API URL 자동 설정 (로컬/배포 자동 전환)
+const API_URL = typeof window !== 'undefined' && window.location.hostname === 'localhost'
+  ? 'http://localhost:3001'
+  : 'https://youth-center-platform.onrender.com';
+
+// ✅ 타입 정의
+type Facility = {
+  id: string;
+  name: string;
+  icon: string;
+  description: string | null;
+  capacity: number | null;
+  isActive: boolean;
+};
+
+type Booking = {
+  id: number;
+  facility_id: string;
+  user_name: string;
+  date: string;
+  time_slot: string;
+  phone: string | null;
+  status: string;
+  source: string;
+  created_at: string;
+  facility: {
+    id: string;
+    name: string;
+    icon: string;
+  };
+};
 
 // Generate hourly time slots from 9:00 to 18:00
 const TIME_SLOTS = Array.from({ length: 9 }, (_, i) => {
@@ -98,11 +128,11 @@ const BookingModal: React.FC<{
 };
 
 const BookingSuccessModal: React.FC<{ bookings: Booking[]; onClose: () => void }> = ({ bookings, onClose }) => {
-    console.log('📋 성공 모달 - 예약 데이터:', bookings); // ✅ 디버깅용
+    console.log('📋 성공 모달 - 예약 데이터:', bookings);
     
     const firstBooking = bookings[0];
-    const facilityName = firstBooking?.facilityName || '알 수 없음';
-    const userName = firstBooking?.userName || '알 수 없음';
+    const facilityName = firstBooking?.facility?.name || '알 수 없음';
+    const userName = firstBooking?.user_name || '알 수 없음';
     const date = firstBooking?.date || '';
     
     return (
@@ -123,12 +153,12 @@ const BookingSuccessModal: React.FC<{ bookings: Booking[]; onClose: () => void }
                     <p><strong>시간대:</strong></p>
                     <div className="flex flex-wrap gap-1 mt-2">
                       {bookings.map(booking => {
-                        if (!booking.timeSlot) {
+                        if (!booking.time_slot) {
                             console.warn('⚠️ timeSlot 없음:', booking);
                             return null;
                         }
                         
-                        const timeDisplay = booking.timeSlot.split('-')[0];
+                        const timeDisplay = booking.time_slot.split('-')[0];
                         return (
                           <span key={booking.id} className="inline-block bg-indigo-100 text-indigo-700 px-2 py-1 rounded text-xs font-semibold">
                             {timeDisplay}
@@ -151,20 +181,41 @@ const FacilityCard: React.FC<{
 }> = ({ facility, bookings, selectedDate, onBook }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [selectedTimeSlots, setSelectedTimeSlots] = useState<string[]>([]);
+  const [existingBookingsCount, setExistingBookingsCount] = useState(0);
+  const [phoneNumber, setPhoneNumber] = useState('');
   
   const bookingsForDate = bookings.filter(b => 
-    b.facilityId === facility.id && 
+    b.facility_id === facility.id && 
     b.date.split('T')[0] === selectedDate &&
     b.status === 'active'
   );
   
   const bookedTimeSlots = new Set(
-    bookingsForDate.map(b => b.timeSlot)
+    bookingsForDate.map(b => b.time_slot)
   );
+  
+  // ✅ 전화번호로 기존 예약 개수 확인
+  const checkExistingBookings = async (phone: string) => {
+    if (phone.length >= 10) {
+      try {
+        const response = await fetch(
+          `${API_URL}/api/kiosk/bookings/check?facilityId=${facility.id}&date=${selectedDate}&phone=${phone}`
+        );
+        const data = await response.json();
+        if (data.success) {
+          setExistingBookingsCount(data.count || 0);
+        }
+      } catch (error) {
+        console.error('예약 개수 확인 실패:', error);
+      }
+    }
+  };
   
   useEffect(() => {
     if (!isExpanded) {
       setSelectedTimeSlots([]);
+      setExistingBookingsCount(0);
+      setPhoneNumber('');
     }
   }, [isExpanded]);
   
@@ -173,6 +224,12 @@ const FacilityCard: React.FC<{
       if (prev.includes(timeSlot)) {
         return prev.filter(t => t !== timeSlot);
       } else {
+        // ✅ 최대 선택 가능 개수 체크
+        const maxSelectable = 2 - existingBookingsCount;
+        if (prev.length >= maxSelectable) {
+          alert(`같은 날, 같은 실습실은 최대 2시간까지만 예약 가능합니다.\n현재 ${existingBookingsCount}개 예약됨`);
+          return prev;
+        }
         return [...prev, timeSlot];
       }
     });
@@ -182,6 +239,8 @@ const FacilityCard: React.FC<{
     if (selectedTimeSlots.length > 0) {
       onBook(facility, selectedTimeSlots);
       setSelectedTimeSlots([]);
+      setExistingBookingsCount(0);
+      setPhoneNumber('');
       setIsExpanded(false);
     }
   };
@@ -191,8 +250,21 @@ const FacilityCard: React.FC<{
   return (
     <div className="bg-white/70 backdrop-blur-xl rounded-2xl shadow-lg border border-white/30 p-5 overflow-hidden transition-all duration-300">
       <div className="flex flex-col sm:flex-row gap-5">
-        <div className="w-full sm:w-40 h-40 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-lg flex items-center justify-center text-6xl flex-shrink-0">
-          {facility.icon}
+        <div className="w-full sm:w-40 h-40 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-lg flex items-center justify-center text-6xl flex-shrink-0 overflow-hidden">
+          {/* ✅ 이미지 또는 이모지 */}
+          {facility.icon.startsWith('/') || facility.icon.startsWith('http') ? (
+            <img 
+              src={facility.icon.startsWith('/') ? `${API_URL}${facility.icon}` : facility.icon}
+              alt={facility.name}
+              style={{ 
+                width: '100%', 
+                height: '100%', 
+                objectFit: 'cover'
+              }}
+            />
+          ) : (
+            facility.icon
+          )}
         </div>
         <div className="flex flex-col flex-grow">
           <h3 className="text-xl font-bold text-slate-800">{facility.name}</h3>
@@ -213,8 +285,34 @@ const FacilityCard: React.FC<{
       </div>
       {isExpanded && (
         <div className="mt-4 pt-4 border-t border-slate-200/80">
+          {/* ✅ 전화번호 입력 */}
+          <div className="mb-4">
+            <label className="block text-sm font-semibold text-slate-700 mb-2">
+              전화번호 입력 (예약 확인용)
+            </label>
+            <input
+              type="tel"
+              value={phoneNumber}
+              onChange={(e) => {
+                setPhoneNumber(e.target.value);
+                checkExistingBookings(e.target.value.replace(/-/g, ''));
+              }}
+              placeholder="전화번호 ('-' 제외)"
+              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white"
+            />
+          </div>
+
+          {/* ✅ 예약 가능 횟수 표시 */}
+          {existingBookingsCount > 0 && (
+            <div className="mb-4 p-3 bg-yellow-100 border border-yellow-300 rounded-lg text-sm text-yellow-800">
+              ⚠️ 오늘 이 실습실을 {existingBookingsCount}시간 예약하셨습니다.
+              <br />
+              최대 {2 - existingBookingsCount}시간 추가 예약 가능합니다.
+            </div>
+          )}
+
           <h4 className="font-semibold mb-3 text-slate-700">
-            예약할 시간을 선택하세요 (복수 선택 가능)
+            예약할 시간을 선택하세요 (최대 {2 - existingBookingsCount}개)
             {selectedTimeSlots.length > 0 && (
               <span className="text-indigo-600 ml-2">({selectedTimeSlots.length}개 선택됨)</span>
             )}
@@ -223,6 +321,8 @@ const FacilityCard: React.FC<{
             {TIME_SLOTS.map(timeSlot => {
               const isBooked = bookedTimeSlots.has(timeSlot);
               const isSelected = selectedTimeSlots.includes(timeSlot);
+              const maxSelectable = 2 - existingBookingsCount;
+              const isDisabled = !isSelected && selectedTimeSlots.length >= maxSelectable;
               
               if (isBooked) {
                 return (
@@ -241,9 +341,12 @@ const FacilityCard: React.FC<{
                 <button
                   key={timeSlot}
                   onClick={() => toggleTimeSlot(timeSlot)}
+                  disabled={isDisabled}
                   className={`p-3 rounded-lg text-sm font-semibold transition-all duration-200 transform hover:scale-105 border-2 ${
                     isSelected 
                       ? 'bg-indigo-500 text-white border-indigo-700 shadow-lg scale-105'
+                      : isDisabled
+                      ? 'bg-gray-200 text-gray-400 border-gray-300 cursor-not-allowed'
                       : 'bg-indigo-100 text-indigo-700 border-indigo-300 hover:bg-indigo-200'
                   }`}
                 >
@@ -280,45 +383,68 @@ const NewReservationView: React.FC<{
     const [successInfo, setSuccessInfo] = useState<Booking[]>([]);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-const handleConfirmBooking = async (details: { userName: string; phoneNumber: string; pin: string; date: string; timeSlots: string[] }) => {
-    if (!bookingSlot) return;
-    
-    try {
-        const newBookings: Booking[] = [];
+    const handleConfirmBooking = async (details: { userName: string; phoneNumber: string; pin: string; date: string; timeSlots: string[] }) => {
+        if (!bookingSlot) return;
         
-        for (const timeSlot of details.timeSlots) {
-            const bookingPayload = {
-                facilityId: bookingSlot.facility.id,
-                userName: details.userName,
-                date: details.date,
-                timeSlot: timeSlot,
-                phone: details.phoneNumber,
-                // ✅ source 추가
-                source: 'kiosk'
-            };
+        try {
+            const newBookings: Booking[] = [];
             
-            console.log('📤 예약 요청:', bookingPayload); // ✅ 디버깅용
+            for (const timeSlot of details.timeSlots) {
+                const bookingPayload = {
+                    facilityId: bookingSlot.facility.id,
+                    userName: details.userName,
+                    date: details.date,
+                    timeSlot: timeSlot,
+                    phone: details.phoneNumber,
+                };
+                
+                console.log('📤 예약 요청:', bookingPayload);
+                
+                // ✅ API 호출
+                const response = await fetch(`${API_URL}/api/kiosk/bookings`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(bookingPayload),
+                });
+                
+                const result = await response.json();
+                console.log('📥 예약 응답:', result);
+                
+                if (!result.success) {
+                    throw new Error(result.error || result.message || '예약에 실패했습니다.');
+                }
+                
+                // ✅ 데이터 변환
+                const booking: Booking = {
+                    id: result.data.id,
+                    facility_id: result.data.facility_id,
+                    user_name: result.data.user_name,
+                    date: result.data.date,
+                    time_slot: result.data.time_slot,
+                    phone: result.data.phone,
+                    status: result.data.status,
+                    source: result.data.source,
+                    created_at: result.data.created_at,
+                    facility: result.data.facility
+                };
+                
+                newBookings.push(booking);
+                onAddBooking(booking);
+            }
             
-            const result = await addBookingService(bookingPayload);
-            console.log('📥 예약 응답:', result); // ✅ 디버깅용
+            await onRefreshBookings();
+            setBookingSlot(null);
+            setSuccessInfo(newBookings);
+            setErrorMessage(null);
+        } catch (error: any) {
+            console.error("💥 예약 실패:", error);
+            setBookingSlot(null);
             
-            newBookings.push(result);
-            onAddBooking(result);
+            const errorMsg = error.message || '예약에 실패했습니다. 다시 시도해주세요.';
+            setErrorMessage(errorMsg);
+            setTimeout(() => setErrorMessage(null), 5000);
         }
-        
-        await onRefreshBookings();
-        setBookingSlot(null);
-        setSuccessInfo(newBookings);
-        setErrorMessage(null);
-    } catch (error: any) {
-        console.error("💥 예약 실패:", error);
-        setBookingSlot(null);
-        
-        const errorMsg = error.message || '예약에 실패했습니다. 다시 시도해주세요.';
-        setErrorMessage(errorMsg);
-        setTimeout(() => setErrorMessage(null), 5000);
-    }
-};
+    };
 
     const handleCloseSuccess = () => {
         setSuccessInfo([]);
@@ -386,7 +512,6 @@ const CheckReservationView: React.FC<{
     onCancelBooking: (bookingId: string) => void;
 }> = ({ bookings, facilities, onCancelBooking }) => {
     const [phone, setPhone] = useState('');
-    // const [pin, setPin] = useState(''); // ⬅️ 'pin' 변수 삭제 (TS6133)
     const [error, setError] = useState('');
     const [userBookings, setUserBookings] = useState<Booking[] | null>(null);
 
@@ -401,7 +526,7 @@ const CheckReservationView: React.FC<{
 
     const handleCheck = () => {
         const foundBookings = bookings.filter(b => 
-          b.phone === phone.replace(/-/g, '')
+          b.phone === phone.replace(/-/g, '') && b.status === 'active'
         );
         if (foundBookings.length > 0) {
             setUserBookings(foundBookings.sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime()));
@@ -415,7 +540,6 @@ const CheckReservationView: React.FC<{
     const handleLogout = () => {
         setUserBookings(null);
         setPhone('');
-        // setPin(''); // ⬅️ 'pin' 변수 삭제 (TS6133)
         setError('');
     };
     
@@ -437,16 +561,16 @@ const CheckReservationView: React.FC<{
                  ) : (
                     <div className="space-y-4 pr-2">
                         {userBookings.map(booking => {
-                            const facility = facilities.find(f => f.id === booking.facilityId);
+                            const facility = facilities.find(f => f.id === booking.facility_id);
                             return (
                                 <div key={booking.id} className="bg-white/70 backdrop-blur-xl rounded-2xl shadow-lg border border-white/30 p-5">
                                     <h4 className="font-bold text-lg text-indigo-600">{facility?.name}</h4>
-                                    <p className="text-sm text-slate-500 font-semibold mb-3">{booking.date.split('T')[0]} / {booking.timeSlot}</p>
+                                    <p className="text-sm text-slate-500 font-semibold mb-3">{booking.date.split('T')[0]} / {booking.time_slot}</p>
                                     
                                     <div className="space-y-2 text-sm border-t border-slate-200/80 pt-3">
                                         <p className="flex items-center gap-2 text-slate-700">
                                             <UserIcon className="w-5 h-5 text-slate-400 flex-shrink-0"/>
-                                            <span><strong>예약자:</strong> {booking.userName}</span>
+                                            <span><strong>예약자:</strong> {booking.user_name}</span>
                                         </p>
                                         <p className="flex items-center gap-2 text-slate-700">
                                             <PhoneIcon className="w-5 h-5 text-slate-400 flex-shrink-0"/>
@@ -497,13 +621,17 @@ export const FacilityReservation: React.FC = () => {
   
   const fetchData = async () => {
     try {
-        const [facilitiesData, bookingsData] = await Promise.all([
-          getFacilities(),
-          getBookings()
+        // ✅ API 호출
+        const [facilitiesResponse, bookingsResponse] = await Promise.all([
+          fetch(`${API_URL}/api/kiosk/facilities`),
+          fetch(`${API_URL}/api/kiosk/bookings`)
         ]);
         
-        setFacilities(facilitiesData || []);
-        setBookings(bookingsData || []);
+        const facilitiesData = await facilitiesResponse.json();
+        const bookingsData = await bookingsResponse.json();
+        
+        setFacilities(Array.isArray(facilitiesData) ? facilitiesData : []);
+        setBookings(Array.isArray(bookingsData) ? bookingsData : []);
     } catch (error) {
         console.error("Failed to fetch data:", error);
         showNotification('error', '데이터를 불러오는데 실패했습니다.');
@@ -529,14 +657,24 @@ export const FacilityReservation: React.FC = () => {
     const bookingToCancel = bookings.find(b => String(b.id) === bookingId);
     if (!bookingToCancel) return;
     
-    const result = await deleteBookingService(Number(bookingId));
+    try {
+        // ✅ API 호출
+        const response = await fetch(`${API_URL}/api/kiosk/bookings/${bookingId}`, {
+            method: 'DELETE',
+        });
+        
+        const result = await response.json();
 
-    if (result.success) {
-        const facility = facilities.find(f => f.id === bookingToCancel.facilityId);
-        setBookings(prev => prev.filter(b => String(b.id) !== bookingId));
-        showNotification('error', `'${facility?.name}' (${bookingToCancel.timeSlot}) 예약이 취소되었습니다.`);
-    } else {
-        showNotification('error', '예약 취소에 실패했습니다. 다시 시도해주세요.');
+        if (result.success) {
+            const facility = facilities.find(f => f.id === bookingToCancel.facility_id);
+            setBookings(prev => prev.filter(b => String(b.id) !== bookingId));
+            showNotification('error', `'${facility?.name}' (${bookingToCancel.time_slot}) 예약이 취소되었습니다.`);
+        } else {
+            showNotification('error', '예약 취소에 실패했습니다. 다시 시도해주세요.');
+        }
+    } catch (error) {
+        console.error('예약 취소 실패:', error);
+        showNotification('error', '예약 취소에 실패했습니다.');
     }
   };
 
