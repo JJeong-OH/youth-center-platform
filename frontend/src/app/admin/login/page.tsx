@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
-// ✅ 직접 하드코딩 - 조건부로
+// ✅ API URL 자동 설정
 const API_URL = typeof window !== 'undefined' && window.location.hostname === 'localhost'
   ? 'http://localhost:3001'
   : 'https://youth-center-platform.onrender.com';
@@ -22,7 +22,7 @@ export default function AdminLoginPage() {
     setError('');
 
     try {
-      console.log('🔗 API URL:', API_URL); // ✅ 디버깅용
+      console.log('🔗 API URL:', API_URL);
       
       const response = await fetch(`${API_URL}/api/admin/login`, {
         method: 'POST',
@@ -135,13 +135,13 @@ export default function AdminLoginPage() {
               color: '#334155',
               marginBottom: '8px'
             }}>
-              이메일
+              아이디 {/* ✅ 이메일 → 아이디 */}
             </label>
             <input
-              type="email"
+              type="text" {/* ✅ email → text */}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="admin@example.com"
+              placeholder="admin" {/* ✅ placeholder 변경 */}
               required
               style={{
                 width: '100%',
