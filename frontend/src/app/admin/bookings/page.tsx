@@ -4,6 +4,14 @@ import { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 
+interface Facility {
+  id: string;
+  name: string;
+  icon: string;
+  capacity?: number;
+  isActive: boolean;
+}
+
 interface Booking {
   id: number;
   facility_id: string;
@@ -24,6 +32,7 @@ export default function BookingsPage() {
   const pathname = usePathname();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [filteredBookings, setFilteredBookings] = useState<Booking[]>([]);
+  const [facilities, setFacilities] = useState<Facility[]>([]);
   const [loading, setLoading] = useState(true);
   const [adminInfo, setAdminInfo] = useState<any>(null);
   
@@ -45,14 +54,6 @@ export default function BookingsPage() {
     { path: '/admin/surveys', label: '설문 통계', icon: '■' },
   ];
 
-  const facilities = [
-    { id: 'all', name: '전체' },
-    { id: 'fac_001', name: '댄스 연습실' },
-    { id: 'fac_002', name: '음악 합주실' },
-    { id: 'fac_003', name: '스터디룸 A' },
-    { id: 'fac_004', name: '멀티실' },
-  ];
-
   useEffect(() => {
     const token = localStorage.getItem('adminToken');
     const info = localStorage.getItem('adminInfo');
@@ -66,13 +67,36 @@ export default function BookingsPage() {
       setAdminInfo(JSON.parse(info));
     }
 
+    fetchFacilities();
     fetchBookings();
   }, [router]);
+
+  const fetchFacilities = async () => {
+    try {
+      const API_URL = typeof window !== 'undefined' && window.location.hostname === 'localhost'
+        ? 'http://localhost:3001'
+        : 'https://youth-center-platform.onrender.com';
+        
+      const response = await fetch(`${API_URL}/api/facilities`);
+      const data = await response.json();
+      
+      if (data.success && Array.isArray(data.facilities)) {
+        const activeFacilities = data.facilities.filter((f: Facility) => f.isActive);
+        setFacilities(activeFacilities);
+      }
+    } catch (error) {
+      console.error('실습실 목록 로드 실패:', error);
+    }
+  };
 
   const fetchBookings = async () => {
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:3001/api/kiosk/bookings');
+      const API_URL = typeof window !== 'undefined' && window.location.hostname === 'localhost'
+        ? 'http://localhost:3001'
+        : 'https://youth-center-platform.onrender.com';
+        
+      const response = await fetch(`${API_URL}/api/kiosk/bookings`);
       const data = await response.json();
       setBookings(Array.isArray(data) ? data : []);
     } catch (error) {
@@ -280,7 +304,7 @@ export default function BookingsPage() {
           </p>
         </div>
 
-        {/* 시설 탭 */}
+        {/* 시설 탭 - DB 기반 동적 생성 */}
         <div style={{
           backgroundColor: 'white',
           border: '1px solid #e2e8f0',
@@ -289,8 +313,33 @@ export default function BookingsPage() {
           marginBottom: '24px',
           display: 'flex',
           gap: '8px',
-          overflowX: 'auto'
+          overflowX: 'auto',
+          flexWrap: 'wrap'
         }}>
+          {/* 전체 보기 버튼 */}
+          <button
+            onClick={() => setSelectedFacility('all')}
+            style={{
+              flex: '0 0 auto',
+              minWidth: '120px',
+              padding: '16px',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              backgroundColor: selectedFacility === 'all' ? '#3b82f6' : 'transparent',
+              color: selectedFacility === 'all' ? 'white' : '#475569',
+              fontWeight: '600',
+              fontSize: '14px',
+              transition: 'all 0.2s'
+            }}
+          >
+            <div>전체</div>
+            <div style={{ fontSize: '20px', marginTop: '4px' }}>
+              {getStatsForFacility('all').total}건
+            </div>
+          </button>
+
+          {/* DB에서 가져온 실습실 동적 렌더링 */}
           {facilities.map((facility) => {
             const stats = getStatsForFacility(facility.id);
             return (
@@ -298,7 +347,7 @@ export default function BookingsPage() {
                 key={facility.id}
                 onClick={() => setSelectedFacility(facility.id)}
                 style={{
-                  flex: '1',
+                  flex: '0 0 auto',
                   minWidth: '120px',
                   padding: '16px',
                   border: 'none',
@@ -308,11 +357,44 @@ export default function BookingsPage() {
                   color: selectedFacility === facility.id ? 'white' : '#475569',
                   fontWeight: '600',
                   fontSize: '14px',
-                  transition: 'all 0.2s'
+                  transition: 'all 0.2s',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '4px'
                 }}
               >
+                {/* 아이콘 (이미지 또는 이모지) */}
+                {facility.icon.startsWith('/') || facility.icon.startsWith('http') ? (
+                  <img 
+                    src={facility.icon} 
+                    alt={facility.name}
+                    style={{ 
+                      width: '32px', 
+                      height: '32px', 
+                      objectFit: 'cover',
+                      borderRadius: '4px'
+                    }}
+                  />
+                ) : (
+                  <span style={{ fontSize: '24px' }}>{facility.icon}</span>
+                )}
+                
                 <div>{facility.name}</div>
-                <div style={{ fontSize: '20px', marginTop: '4px' }}>{stats.total}건</div>
+                <div style={{ fontSize: '20px', marginTop: '4px' }}>
+                  {stats.total}건
+                </div>
+                
+                {/* 수용 인원 */}
+                {facility.capacity && (
+                  <div style={{ 
+                    fontSize: '11px', 
+                    opacity: 0.7,
+                    marginTop: '2px'
+                  }}>
+                    {facility.capacity}명
+                  </div>
+                )}
               </button>
             );
           })}

@@ -20,6 +20,11 @@ export default function FacilitiesPage() {
   const [showModal, setShowModal] = useState(false);
   const [editingFacility, setEditingFacility] = useState<Facility | null>(null);
   
+  // ✅ 이미지 업로드 관련 state 추가
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string>('');
+  const [useEmoji, setUseEmoji] = useState(true);
+
   const [formData, setFormData] = useState({
     name: '',
     icon: '🏢',
@@ -28,10 +33,14 @@ export default function FacilitiesPage() {
     order: '0',
   });
 
+  const API_URL = typeof window !== 'undefined' && window.location.hostname === 'localhost'
+    ? 'http://localhost:3001'
+    : 'https://youth-center-platform.onrender.com';
+
   const fetchFacilities = async () => {
     try {
       const token = localStorage.getItem('adminToken');
-      const response = await fetch('http://localhost:3001/api/facilities?includeInactive=true', {
+      const response = await fetch(`${API_URL}/api/facilities?includeInactive=true`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -58,6 +67,9 @@ export default function FacilitiesPage() {
       capacity: '',
       order: '0',
     });
+    setImageFile(null);
+    setImagePreview('');
+    setUseEmoji(true);
     setShowModal(true);
   };
 
@@ -70,7 +82,32 @@ export default function FacilitiesPage() {
       capacity: facility.capacity?.toString() || '',
       order: facility.order.toString(),
     });
+
+    // 이미지인지 이모지인지 확인
+    if (facility.icon.startsWith('/') || facility.icon.startsWith('http')) {
+      setUseEmoji(false);
+      setImagePreview(facility.icon);
+    } else {
+      setUseEmoji(true);
+      setImagePreview('');
+    }
+    setImageFile(null);
     setShowModal(true);
+  };
+
+  // ✅ 이미지 파일 선택 핸들러
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImageFile(file);
+      
+      // 미리보기 생성
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -85,25 +122,33 @@ export default function FacilitiesPage() {
     }
     
     const url = editingFacility
-      ? `http://localhost:3001/api/facilities/${editingFacility.id}`
-      : 'http://localhost:3001/api/facilities';
+      ? `${API_URL}/api/facilities/${editingFacility.id}`
+      : `${API_URL}/api/facilities`;
     
     const method = editingFacility ? 'PUT' : 'POST';
     
     try {
+      // ✅ FormData 사용 (이미지 업로드 지원)
+      const formDataToSend = new FormData();
+      formDataToSend.append('name', formData.name);
+      formDataToSend.append('description', formData.description);
+      formDataToSend.append('capacity', formData.capacity);
+      formDataToSend.append('order', formData.order);
+
+      // 이미지 또는 이모지
+      if (useEmoji) {
+        formDataToSend.append('icon', formData.icon);
+      } else if (imageFile) {
+        formDataToSend.append('image', imageFile);
+      }
+
       const response = await fetch(url, {
         method,
         headers: { 
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
+          // ✅ Content-Type 제거 (FormData가 자동으로 설정)
         },
-        body: JSON.stringify({
-          name: formData.name,
-          icon: formData.icon,
-          description: formData.description,
-          capacity: formData.capacity ? parseInt(formData.capacity) : null,
-          order: parseInt(formData.order),
-        }),
+        body: formDataToSend,
       });
       
       const data = await response.json();
@@ -127,7 +172,7 @@ export default function FacilitiesPage() {
     const token = localStorage.getItem('adminToken');
     
     try {
-      const response = await fetch(`http://localhost:3001/api/facilities/${id}`, {
+      const response = await fetch(`${API_URL}/api/facilities/${id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -152,13 +197,15 @@ export default function FacilitiesPage() {
     const token = localStorage.getItem('adminToken');
     
     try {
-      const response = await fetch(`http://localhost:3001/api/facilities/${facility.id}`, {
+      const formDataToSend = new FormData();
+      formDataToSend.append('isActive', (!facility.isActive).toString());
+
+      const response = await fetch(`${API_URL}/api/facilities/${facility.id}`, {
         method: 'PUT',
         headers: { 
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ isActive: !facility.isActive }),
+        body: formDataToSend,
       });
       
       if (response.ok) {
@@ -258,7 +305,23 @@ export default function FacilitiesPage() {
                 {facilities.map((facility) => (
                   <tr key={facility.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
                     <td style={tableCellStyle}>{facility.order}</td>
-                    <td style={tableCellStyle}><span style={{ fontSize: '32px' }}>{facility.icon}</span></td>
+                    <td style={tableCellStyle}>
+                      {/* ✅ 이미지 또는 이모지 표시 */}
+                      {facility.icon.startsWith('/') || facility.icon.startsWith('http') ? (
+                        <img 
+                          src={`${API_URL}${facility.icon}`}
+                          alt={facility.name}
+                          style={{ 
+                            width: '48px', 
+                            height: '48px', 
+                            objectFit: 'cover',
+                            borderRadius: '6px'
+                          }}
+                        />
+                      ) : (
+                        <span style={{ fontSize: '32px' }}>{facility.icon}</span>
+                      )}
+                    </td>
                     <td style={tableCellStyle}>
                       <strong style={{ color: '#1e293b' }}>{facility.name}</strong>
                     </td>
@@ -324,7 +387,7 @@ export default function FacilitiesPage() {
         </div>
       </main>
 
-      {/* 모달 */}
+      {/* ✅ 모달 (이미지 업로드 추가) */}
       {showModal && (
         <div style={{
           position: 'fixed',
@@ -344,7 +407,9 @@ export default function FacilitiesPage() {
             padding: '32px',
             width: '500px',
             maxWidth: '90%',
-            border: '1px solid #e2e8f0'
+            border: '1px solid #e2e8f0',
+            maxHeight: '90vh',
+            overflowY: 'auto'
           }}>
             <h2 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '24px', color: '#1e293b', borderBottom: '2px solid #1e3a8a', paddingBottom: '12px' }}>
               {editingFacility ? '시설 수정' : '시설 추가'}
@@ -362,21 +427,104 @@ export default function FacilitiesPage() {
                 />
               </div>
 
+              {/* ✅ 아이콘 타입 선택 */}
               <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#475569', fontSize: '14px' }}>아이콘 (이모지)</label>
-                <input
-                  type="text"
-                  value={formData.icon}
-                  onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
-                  style={{
-                    width: '100%',
-                    padding: '10px 12px',
-                    border: '1px solid #cbd5e1',
-                    borderRadius: '6px',
-                    fontSize: '24px',
-                    backgroundColor: '#f8fafc'
-                  }}
-                />
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#475569', fontSize: '14px' }}>아이콘 타입</label>
+                <div style={{ display: 'flex', gap: '12px', marginBottom: '12px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setUseEmoji(true)}
+                    style={{
+                      flex: 1,
+                      padding: '10px',
+                      backgroundColor: useEmoji ? '#1e3a8a' : '#f1f5f9',
+                      color: useEmoji ? 'white' : '#475569',
+                      border: `1px solid ${useEmoji ? '#1e3a8a' : '#e2e8f0'}`,
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      fontWeight: '600',
+                      fontSize: '14px'
+                    }}
+                  >
+                    이모지
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setUseEmoji(false)}
+                    style={{
+                      flex: 1,
+                      padding: '10px',
+                      backgroundColor: !useEmoji ? '#1e3a8a' : '#f1f5f9',
+                      color: !useEmoji ? 'white' : '#475569',
+                      border: `1px solid ${!useEmoji ? '#1e3a8a' : '#e2e8f0'}`,
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      fontWeight: '600',
+                      fontSize: '14px'
+                    }}
+                  >
+                    이미지
+                  </button>
+                </div>
+
+                {/* ✅ 이모지 입력 */}
+                {useEmoji && (
+                  <input
+                    type="text"
+                    value={formData.icon}
+                    onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
+                    placeholder="이모지 입력 (예: 🏢)"
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      border: '1px solid #cbd5e1',
+                      borderRadius: '6px',
+                      fontSize: '24px',
+                      backgroundColor: '#f8fafc',
+                      textAlign: 'center'
+                    }}
+                  />
+                )}
+
+                {/* ✅ 이미지 업로드 */}
+                {!useEmoji && (
+                  <div>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        border: '1px solid #cbd5e1',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        backgroundColor: '#f8fafc'
+                      }}
+                    />
+                    {/* 미리보기 */}
+                    {imagePreview && (
+                      <div style={{ 
+                        marginTop: '12px', 
+                        textAlign: 'center',
+                        padding: '12px',
+                        backgroundColor: '#f8fafc',
+                        borderRadius: '6px',
+                        border: '1px solid #e2e8f0'
+                      }}>
+                        <img 
+                          src={imagePreview.startsWith('/') ? `${API_URL}${imagePreview}` : imagePreview}
+                          alt="미리보기"
+                          style={{ 
+                            maxWidth: '100%', 
+                            maxHeight: '150px',
+                            borderRadius: '6px'
+                          }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div style={{ marginBottom: '16px' }}>
