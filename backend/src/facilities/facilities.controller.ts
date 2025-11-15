@@ -22,7 +22,7 @@ import { AdminGuard } from '../admin/admin.guard';
 export class FacilitiesController {
   constructor(private readonly facilitiesService: FacilitiesService) {}
 
-  // ✅ 이미지 업로드 설정
+  // 이미지 업로드 설정
   private getMulterOptions() {
     return {
       storage: diskStorage({
@@ -48,7 +48,6 @@ export class FacilitiesController {
     };
   }
 
-  // 전체 시설 조회
   @Get()
   async getAllFacilities(@Query('includeInactive') includeInactive?: string) {
     return this.facilitiesService.getAllFacilities(
@@ -56,19 +55,18 @@ export class FacilitiesController {
     );
   }
 
-  // 시설 1개 조회
   @Get(':id')
   async getFacilityById(@Param('id') id: string) {
     return this.facilitiesService.getFacilityById(id);
   }
 
-  // ✅ 시설 생성 (이미지 업로드 포함)
+  // ✅ 시설 생성 (타입 수정)
   @Post()
   @UseGuards(AdminGuard)
   @UseInterceptors(FileInterceptor('image'))
   async createFacility(
     @Body() body: any,
-    @UploadedFile() file?: Express.Multer.File,
+    @UploadedFile() file?: any,  // ✅ any로 변경
   ) {
     try {
       const icon = file 
@@ -90,14 +88,14 @@ export class FacilitiesController {
     }
   }
 
-  // ✅ 시설 수정 (이미지 업로드 포함)
+  // ✅ 시설 수정 (타입 수정)
   @Put(':id')
   @UseGuards(AdminGuard)
   @UseInterceptors(FileInterceptor('image'))
   async updateFacility(
     @Param('id') id: string,
     @Body() body: any,
-    @UploadedFile() file?: Express.Multer.File,
+    @UploadedFile() file?: any,  // ✅ any로 변경
   ) {
     try {
       const updateData: any = {
@@ -107,15 +105,12 @@ export class FacilitiesController {
         order: body.order ? parseInt(body.order) : 0,
       };
 
-      // 새 이미지가 업로드되면 경로 업데이트
       if (file) {
         updateData.icon = `/uploads/facilities/${file.filename}`;
       } else if (body.icon && !body.icon.startsWith('/uploads')) {
-        // 이모지인 경우
         updateData.icon = body.icon;
       }
 
-      // isActive 처리
       if (body.isActive !== undefined) {
         updateData.isActive = body.isActive === 'true' || body.isActive === true;
       }
@@ -129,7 +124,6 @@ export class FacilitiesController {
     }
   }
 
-  // 시설 삭제 (soft delete)
   @Delete(':id')
   @UseGuards(AdminGuard)
   async deleteFacility(@Param('id') id: string) {
@@ -143,7 +137,6 @@ export class FacilitiesController {
     }
   }
 
-  // 시설 완전 삭제
   @Delete(':id/hard')
   @UseGuards(AdminGuard)
   async hardDeleteFacility(@Param('id') id: string) {
