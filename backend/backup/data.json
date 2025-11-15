@@ -1,0 +1,576 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "name": "오정현",
+      "email": "whtpq159@naver.com",
+      "password_hash": "$2b$10$XdDgEF2GEFRpaLc0RXYgIuv7J5z9p5FQeCqRK8sTrhl/YlWZPrYWW",
+      "role": "ADMIN",
+      "created_at": "2025-11-13T07:47:25.240Z",
+      "profiles": []
+    },
+    {
+      "id": 2,
+      "name": "테스트유저",
+      "email": "test@example.com",
+      "password_hash": "$2b$10$3G1YNjARcnBt2pxSRPXbnuoSPDWxzET3VJT/ElnZ8ONqPF.JpkS1C",
+      "role": "USER",
+      "created_at": "2025-11-13T07:47:25.300Z",
+      "profiles": [
+        {
+          "id": 1,
+          "user_id": 2,
+          "grade": "고등학교 2학년",
+          "phone": "010-1234-5678",
+          "interests": null,
+          "created_at": "2025-11-13T07:47:25.300Z",
+          "updated_at": "2025-11-13T07:47:25.300Z"
+        }
+      ]
+    }
+  ],
+  "programs": [
+    {
+      "id": 5,
+      "title": "자기관리 캠프",
+      "department": "청소년활동팀",
+      "startDate": "2025-01-20T00:00:00.000Z",
+      "endDate": "2025-01-22T00:00:00.000Z",
+      "targetAudience": "고등학생",
+      "capacity": 30,
+      "fee": 50000,
+      "recruitStatus": "모집중",
+      "description": "시간 관리, 목표 설정, 습관 만들기 등 자기관리 능력을 키우는 2박 3일 캠프입니다.",
+      "imageUrl": null,
+      "tags": [
+        "자기개발",
+        "캠프",
+        "숙박"
+      ],
+      "isActive": true,
+      "order": 2,
+      "createdBy": null,
+      "createdAt": "2025-11-13T07:49:11.907Z",
+      "updatedAt": "2025-11-13T07:49:11.907Z"
+    },
+    {
+      "id": 7,
+      "title": "도그홀릭",
+      "department": "활동기획",
+      "startDate": "2025-11-14T00:00:00.000Z",
+      "endDate": "2025-11-17T00:00:00.000Z",
+      "targetAudience": "중학생",
+      "capacity": 5,
+      "fee": 0,
+      "recruitStatus": "모집중",
+      "description": "",
+      "imageUrl": "",
+      "tags": [],
+      "isActive": false,
+      "order": 0,
+      "createdBy": null,
+      "createdAt": "2025-11-14T12:59:34.896Z",
+      "updatedAt": "2025-11-14T15:58:21.182Z"
+    },
+    {
+      "id": 4,
+      "title": "청소년 코딩 교실",
+      "department": "정보교육팀",
+      "startDate": "2025-02-01T00:00:00.000Z",
+      "endDate": "2025-02-28T00:00:00.000Z",
+      "targetAudience": "중고등학생",
+      "capacity": 20,
+      "fee": 0,
+      "recruitStatus": "모집중",
+      "description": "파이썬 기초부터 간단한 게임 만들기까지! 코딩의 세계로 여러분을 초대합니다.",
+      "imageUrl": "",
+      "tags": [
+        "디지털역량",
+        "코딩",
+        "무료"
+      ],
+      "isActive": true,
+      "order": 3,
+      "createdBy": null,
+      "createdAt": "2025-11-13T07:49:11.900Z",
+      "updatedAt": "2025-11-14T15:58:54.000Z"
+    },
+    {
+      "id": 3,
+      "title": "진로탐색 멘토링",
+      "department": "진로지원팀",
+      "startDate": "2025-02-10T00:00:00.000Z",
+      "endDate": "2025-03-10T00:00:00.000Z",
+      "targetAudience": "중고등학생",
+      "capacity": 15,
+      "fee": 20000,
+      "recruitStatus": "모집중",
+      "description": "다양한 직업군의 멘토와 만나 진로를 탐색하고 꿈을 구체화하는 프로그램입니다.",
+      "imageUrl": "",
+      "tags": [
+        "진로개발",
+        "멘토링",
+        "1:1상담"
+      ],
+      "isActive": true,
+      "order": 5,
+      "createdBy": null,
+      "createdAt": "2025-11-13T07:47:25.331Z",
+      "updatedAt": "2025-11-14T15:59:00.920Z"
+    },
+    {
+      "id": 2,
+      "title": "자기관리 캠프",
+      "department": "청소년활동팀",
+      "startDate": "2025-01-20T00:00:00.000Z",
+      "endDate": "2025-01-22T00:00:00.000Z",
+      "targetAudience": "고등학생",
+      "capacity": 30,
+      "fee": 50000,
+      "recruitStatus": "모집중",
+      "description": "시간 관리, 목표 설정, 습관 만들기 등 자기관리 능력을 키우는 2박 3일 캠프입니다.",
+      "imageUrl": "",
+      "tags": [
+        "자기개발",
+        "캠프",
+        "숙박"
+      ],
+      "isActive": true,
+      "order": 7,
+      "createdBy": null,
+      "createdAt": "2025-11-13T07:47:25.329Z",
+      "updatedAt": "2025-11-14T15:59:05.871Z"
+    },
+    {
+      "id": 6,
+      "title": "진로탐색 멘토링",
+      "department": "진로지원팀",
+      "startDate": "2025-02-10T00:00:00.000Z",
+      "endDate": "2025-03-10T00:00:00.000Z",
+      "targetAudience": "중고등학생",
+      "capacity": 15,
+      "fee": 20000,
+      "recruitStatus": "모집중",
+      "description": "다양한 직업군의 멘토와 만나 진로를 탐색하고 꿈을 구체화하는 프로그램입니다.",
+      "imageUrl": "",
+      "tags": [
+        "진로개발",
+        "멘토링",
+        "1:1상담"
+      ],
+      "isActive": true,
+      "order": 4,
+      "createdBy": null,
+      "createdAt": "2025-11-13T07:49:11.911Z",
+      "updatedAt": "2025-11-14T15:59:11.045Z"
+    },
+    {
+      "id": 1,
+      "title": "청소년 코딩 교실",
+      "department": "정보교육팀",
+      "startDate": "2025-02-01T00:00:00.000Z",
+      "endDate": "2025-02-28T00:00:00.000Z",
+      "targetAudience": "중고등학생",
+      "capacity": 20,
+      "fee": 0,
+      "recruitStatus": "모집중",
+      "description": "파이썬 기초부터 간단한 게임 만들기까지! 코딩의 세계로 여러분을 초대합니다.",
+      "imageUrl": null,
+      "tags": [
+        "디지털역량",
+        "코딩",
+        "무료"
+      ],
+      "isActive": true,
+      "order": 1,
+      "createdBy": null,
+      "createdAt": "2025-11-13T07:47:25.324Z",
+      "updatedAt": "2025-11-14T14:14:07.215Z"
+    }
+  ],
+  "facilities": [
+    {
+      "id": "fac_dance",
+      "name": "댄스 연습실",
+      "icon": "💃",
+      "description": "거울이 설치된 넓은 댄스 연습 공간입니다",
+      "capacity": 20,
+      "isActive": true,
+      "order": 1,
+      "createdAt": "2025-11-13T07:47:25.310Z",
+      "updatedAt": "2025-11-13T07:47:25.310Z"
+    },
+    {
+      "id": "fac_music",
+      "name": "음악 합주실",
+      "icon": "🎸",
+      "description": "악기 연습 및 밴드 합주가 가능한 방음 시설입니다",
+      "capacity": 10,
+      "isActive": true,
+      "order": 2,
+      "createdAt": "2025-11-13T07:47:25.315Z",
+      "updatedAt": "2025-11-13T07:47:25.315Z"
+    },
+    {
+      "id": "fac_study",
+      "name": "스터디룸",
+      "icon": "📚",
+      "description": "조용한 분위기에서 학습할 수 있는 공간입니다",
+      "capacity": 8,
+      "isActive": true,
+      "order": 3,
+      "createdAt": "2025-11-13T07:47:25.319Z",
+      "updatedAt": "2025-11-13T07:47:25.319Z"
+    },
+    {
+      "id": "f7c06b60-10dd-4788-8526-cf252ca23553",
+      "name": "그린나래실",
+      "icon": "🏢",
+      "description": "",
+      "capacity": 5,
+      "isActive": true,
+      "order": 0,
+      "createdAt": "2025-11-14T13:24:34.225Z",
+      "updatedAt": "2025-11-14T15:14:57.237Z"
+    }
+  ],
+  "programApplications": [
+    {
+      "id": 1,
+      "program_id": 6,
+      "user_id": null,
+      "applicant_name": "정현",
+      "phone": "01026999197",
+      "status": "pending",
+      "applied_at": "2025-11-13T08:19:50.815Z"
+    },
+    {
+      "id": 4,
+      "program_id": 6,
+      "user_id": null,
+      "applicant_name": "정현",
+      "phone": "01026999192",
+      "status": "pending",
+      "applied_at": "2025-11-14T14:15:30.274Z"
+    },
+    {
+      "id": 9,
+      "program_id": 7,
+      "user_id": null,
+      "applicant_name": "정현",
+      "phone": "01022222222",
+      "status": "pending",
+      "applied_at": "2025-11-14T14:33:40.920Z"
+    },
+    {
+      "id": 3,
+      "program_id": 7,
+      "user_id": null,
+      "applicant_name": "정현",
+      "phone": "01026999192",
+      "status": "approved",
+      "applied_at": "2025-11-14T14:15:01.683Z"
+    },
+    {
+      "id": 5,
+      "program_id": 7,
+      "user_id": null,
+      "applicant_name": "정현",
+      "phone": "01024444444",
+      "status": "approved",
+      "applied_at": "2025-11-14T14:32:19.407Z"
+    },
+    {
+      "id": 6,
+      "program_id": 7,
+      "user_id": null,
+      "applicant_name": "민형",
+      "phone": "01025555555",
+      "status": "approved",
+      "applied_at": "2025-11-14T14:32:33.075Z"
+    },
+    {
+      "id": 7,
+      "program_id": 7,
+      "user_id": null,
+      "applicant_name": "정현",
+      "phone": "01066666666",
+      "status": "approved",
+      "applied_at": "2025-11-14T14:32:52.559Z"
+    },
+    {
+      "id": 10,
+      "program_id": 7,
+      "user_id": null,
+      "applicant_name": "정현",
+      "phone": "01026999196",
+      "status": "pending",
+      "applied_at": "2025-11-14T14:39:15.021Z"
+    },
+    {
+      "id": 8,
+      "program_id": 7,
+      "user_id": null,
+      "applicant_name": "정현",
+      "phone": "01026999999",
+      "status": "approved",
+      "applied_at": "2025-11-14T14:33:30.669Z"
+    },
+    {
+      "id": 11,
+      "program_id": 7,
+      "user_id": null,
+      "applicant_name": "장현",
+      "phone": "01023155555",
+      "status": "pending",
+      "applied_at": "2025-11-14T14:48:55.052Z"
+    },
+    {
+      "id": 12,
+      "program_id": 6,
+      "user_id": null,
+      "applicant_name": "정현",
+      "phone": "01026999997",
+      "status": "pending",
+      "applied_at": "2025-11-14T15:14:26.450Z"
+    }
+  ],
+  "bookings": [
+    {
+      "id": 1,
+      "facilityId": "fac_dance",
+      "userId": 2,
+      "userName": "테스트유저",
+      "date": "2025-01-20T00:00:00.000Z",
+      "timeSlot": "14:00-16:00",
+      "phone": "010-1234-5678",
+      "status": "active",
+      "source": "web",
+      "createdAt": "2025-11-13T07:47:25.335Z"
+    },
+    {
+      "id": 2,
+      "facilityId": "fac_dance",
+      "userId": 2,
+      "userName": "테스트유저",
+      "date": "2025-01-20T00:00:00.000Z",
+      "timeSlot": "14:00-16:00",
+      "phone": "010-1234-5678",
+      "status": "active",
+      "source": "web",
+      "createdAt": "2025-11-13T07:49:11.915Z"
+    },
+    {
+      "id": 3,
+      "facilityId": "fac_dance",
+      "userId": null,
+      "userName": "정현",
+      "date": "2025-11-13T00:00:00.000Z",
+      "timeSlot": "09:00-10:00",
+      "phone": "01026999197",
+      "status": "active",
+      "source": "kiosk",
+      "createdAt": "2025-11-13T08:20:28.686Z"
+    },
+    {
+      "id": 4,
+      "facilityId": "fac_dance",
+      "userId": null,
+      "userName": "정현",
+      "date": "2025-11-14T00:00:00.000Z",
+      "timeSlot": "09:00-10:00",
+      "phone": "01026999197",
+      "status": "active",
+      "source": "kiosk",
+      "createdAt": "2025-11-14T00:59:17.861Z"
+    },
+    {
+      "id": 5,
+      "facilityId": "fac_dance",
+      "userId": null,
+      "userName": "정현",
+      "date": "2025-11-14T00:00:00.000Z",
+      "timeSlot": "10:00-11:00",
+      "phone": "01026999197",
+      "status": "active",
+      "source": "kiosk",
+      "createdAt": "2025-11-14T00:59:17.876Z"
+    },
+    {
+      "id": 6,
+      "facilityId": "f7c06b60-10dd-4788-8526-cf252ca23553",
+      "userId": null,
+      "userName": "정현",
+      "date": "2025-11-14T00:00:00.000Z",
+      "timeSlot": "09:00-10:00",
+      "phone": "01026999197",
+      "status": "active",
+      "source": "kiosk",
+      "createdAt": "2025-11-14T13:24:47.246Z"
+    },
+    {
+      "id": 7,
+      "facilityId": "f7c06b60-10dd-4788-8526-cf252ca23553",
+      "userId": null,
+      "userName": "정현",
+      "date": "2025-11-14T00:00:00.000Z",
+      "timeSlot": "10:00-11:00",
+      "phone": "01026999197",
+      "status": "active",
+      "source": "kiosk",
+      "createdAt": "2025-11-14T13:39:10.046Z"
+    },
+    {
+      "id": 8,
+      "facilityId": "f7c06b60-10dd-4788-8526-cf252ca23553",
+      "userId": null,
+      "userName": "정현",
+      "date": "2025-11-14T00:00:00.000Z",
+      "timeSlot": "11:00-12:00",
+      "phone": "01026999197",
+      "status": "active",
+      "source": "kiosk",
+      "createdAt": "2025-11-14T13:42:42.772Z"
+    },
+    {
+      "id": 9,
+      "facilityId": "f7c06b60-10dd-4788-8526-cf252ca23553",
+      "userId": null,
+      "userName": "정현",
+      "date": "2025-11-14T00:00:00.000Z",
+      "timeSlot": "12:00-13:00",
+      "phone": "01026999197",
+      "status": "active",
+      "source": "kiosk",
+      "createdAt": "2025-11-14T13:42:52.398Z"
+    },
+    {
+      "id": 10,
+      "facilityId": "f7c06b60-10dd-4788-8526-cf252ca23553",
+      "userId": null,
+      "userName": "정현",
+      "date": "2025-11-14T00:00:00.000Z",
+      "timeSlot": "13:00-14:00",
+      "phone": "01026999197",
+      "status": "active",
+      "source": "kiosk",
+      "createdAt": "2025-11-14T13:54:20.833Z"
+    },
+    {
+      "id": 11,
+      "facilityId": "f7c06b60-10dd-4788-8526-cf252ca23553",
+      "userId": null,
+      "userName": "정현",
+      "date": "2025-11-14T00:00:00.000Z",
+      "timeSlot": "14:00-15:00",
+      "phone": "01026999197",
+      "status": "active",
+      "source": "kiosk",
+      "createdAt": "2025-11-14T14:49:10.061Z"
+    },
+    {
+      "id": 12,
+      "facilityId": "fac_music",
+      "userId": null,
+      "userName": "정현",
+      "date": "2025-11-14T00:00:00.000Z",
+      "timeSlot": "09:00-10:00",
+      "phone": "01026999197",
+      "status": "active",
+      "source": "kiosk",
+      "createdAt": "2025-11-14T15:59:43.773Z"
+    },
+    {
+      "id": 13,
+      "facilityId": "fac_music",
+      "userId": null,
+      "userName": "정현",
+      "date": "2025-11-14T00:00:00.000Z",
+      "timeSlot": "10:00-11:00",
+      "phone": "01026999197",
+      "status": "active",
+      "source": "kiosk",
+      "createdAt": "2025-11-14T15:59:43.787Z"
+    },
+    {
+      "id": 14,
+      "facilityId": "fac_music",
+      "userId": null,
+      "userName": "정현",
+      "date": "2025-11-14T00:00:00.000Z",
+      "timeSlot": "11:00-12:00",
+      "phone": "01026999197",
+      "status": "active",
+      "source": "kiosk",
+      "createdAt": "2025-11-14T15:59:43.796Z"
+    }
+  ],
+  "testResults": [
+    {
+      "id": 1,
+      "user_id": 2,
+      "answers": {
+        "문화예술분야": [
+          5,
+          4,
+          5,
+          4,
+          5
+        ],
+        "사회참여분야": [
+          3,
+          4,
+          3,
+          4,
+          3
+        ],
+        "자기개발분야": [
+          4,
+          5,
+          4,
+          5,
+          4
+        ]
+      },
+      "scores": {
+        "문화예술분야": 4.6,
+        "사회참여분야": 3.4,
+        "자기개발분야": 4.4
+      },
+      "created_at": "2025-11-13T07:47:25.340Z"
+    },
+    {
+      "id": 2,
+      "user_id": 2,
+      "answers": {
+        "문화예술분야": [
+          5,
+          4,
+          5,
+          4,
+          5
+        ],
+        "사회참여분야": [
+          3,
+          4,
+          3,
+          4,
+          3
+        ],
+        "자기개발분야": [
+          4,
+          5,
+          4,
+          5,
+          4
+        ]
+      },
+      "scores": {
+        "문화예술분야": 4.6,
+        "사회참여분야": 3.4,
+        "자기개발분야": 4.4
+      },
+      "created_at": "2025-11-13T07:49:11.920Z"
+    }
+  ]
+}

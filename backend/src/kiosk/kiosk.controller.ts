@@ -1,4 +1,3 @@
-// backend/src/kiosk/kiosk.controller.ts
 import { Controller, Post, Get, Delete, Body, Param, Query } from '@nestjs/common';
 import { KioskService } from './kiosk.service';
 import { AiService } from '../ai/ai.service';
@@ -71,7 +70,6 @@ export class KioskController {
     },
   ) {
     try {
-      // 시스템 프롬프트 (타입별로)
       const systemPrompts = {
         counselor: `당신은 청소년센터의 친절한 AI 상담사입니다. 청소년들의 고민을 들어주고, 공감하며, 긍정적인 조언을 해주세요. 항상 안전하고 건전한 대화를 이끌어주세요.`,
         recommender: `당신은 청소년센터의 프로그램 추천 AI입니다. 사용자의 관심사를 파악하여 적합한 프로그램을 추천해주세요. 프로그램 목록은 코딩, 댄스, 미술, 밴드, 영어회화 등이 있습니다.`,
@@ -142,39 +140,55 @@ export class KioskController {
     }
   }
 
-@Post('bookings')
-async addBooking(
-  @Body()
-  body: {
-    facilityId: string;
-    userName: string;
-    date: string;
-    timeSlot: string;
-    phone?: string;
-    purpose?: string;
-  },
-) {
-  try {
-    const booking = await this.kioskService.addBooking(body);
-    return {
-      success: true,
-      data: booking,
-      message: '예약이 완료되었습니다!',
-    };
-  } catch (error) {
-    // ✨ Prisma 중복 에러 처리
-    if (error.code === 'P2002') {
+  // ✅ 예약 개수 확인 API
+  @Get('bookings/check')
+  async checkBookingCount(
+    @Query('facilityId') facilityId: string,
+    @Query('date') date: string,
+    @Query('phone') phone: string,
+  ) {
+    try {
+      return await this.kioskService.checkBookingCount(facilityId, date, phone);
+    } catch (error) {
       return {
         success: false,
-        error: '해당 시간대는 이미 예약되어 있습니다.',
+        message: error.message,
       };
     }
-    return {
-      success: false,
-      error: error.message,
-    };
   }
-}
+
+  @Post('bookings')
+  async addBooking(
+    @Body()
+    body: {
+      facilityId: string;
+      userName: string;
+      date: string;
+      timeSlot: string;
+      phone?: string;
+      purpose?: string;
+    },
+  ) {
+    try {
+      const booking = await this.kioskService.addBooking(body);
+      return {
+        success: true,
+        data: booking,
+        message: '예약이 완료되었습니다!',
+      };
+    } catch (error) {
+      if (error.code === 'P2002') {
+        return {
+          success: false,
+          error: '해당 시간대는 이미 예약되어 있습니다.',
+        };
+      }
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
+  }
 
   @Delete('bookings/:id')
   async deleteBooking(@Param('id') id: string) {
@@ -190,18 +204,18 @@ async addBooking(
 
   // ============= 프로그램 신청 =============
 
-    @Get('applications')
-async getApplications(@Query('programId') programId?: string) {
-  try {
-    const pid = programId ? parseInt(programId) : undefined;
-    return await this.kioskService.getApplications(pid);
-  } catch (error) {
-    return {
-      success: false,
-      message: error.message,
-    };
+  @Get('applications')
+  async getApplications(@Query('programId') programId?: string) {
+    try {
+      const pid = programId ? parseInt(programId) : undefined;
+      return await this.kioskService.getApplications(pid);
+    } catch (error) {
+      return {
+        success: false,
+        message: error.message,
+      };
+    }
   }
-}
 
   @Post('applications')
   async addApplication(
@@ -239,32 +253,28 @@ async getApplications(@Query('programId') programId?: string) {
       };
     }
   }
-  // 기존 코드에 추가
 
-// ✅ 신청 승인
-@Post('applications/:id/approve')
-async approveApplication(@Param('id') id: string) {
-  try {
-    return await this.kioskService.approveApplication(parseInt(id));
-  } catch (error) {
-    return {
-      success: false,
-      message: error.message,
-    };
+  @Post('applications/:id/approve')
+  async approveApplication(@Param('id') id: string) {
+    try {
+      return await this.kioskService.approveApplication(parseInt(id));
+    } catch (error) {
+      return {
+        success: false,
+        message: error.message,
+      };
+    }
   }
-}
 
-// ✅ 신청 거절
-@Post('applications/:id/reject')
-async rejectApplication(@Param('id') id: string) {
-  try {
-    return await this.kioskService.rejectApplication(parseInt(id));
-  } catch (error) {
-    return {
-      success: false,
-      message: error.message,
-    };
+  @Post('applications/:id/reject')
+  async rejectApplication(@Param('id') id: string) {
+    try {
+      return await this.kioskService.rejectApplication(parseInt(id));
+    } catch (error) {
+      return {
+        success: false,
+        message: error.message,
+      };
+    }
   }
-}
-
 }

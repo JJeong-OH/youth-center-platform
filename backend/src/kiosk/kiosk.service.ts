@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaClient } from '@prisma/client';
 
@@ -159,6 +159,30 @@ export class KioskService {
     }
   }
 
+  // ✅ 기존 예약 개수 확인
+  async checkBookingCount(facilityId: string, date: string, phone: string) {
+    try {
+      const count = await prisma.booking.count({
+        where: {
+          facilityId,
+          date: new Date(date),
+          phone,
+          status: 'active',
+        },
+      });
+
+      return {
+        success: true,
+        count,
+        remaining: Math.max(0, 2 - count),
+      };
+    } catch (error) {
+      console.error('❌ 예약 개수 확인 실패:', error);
+      throw error;
+    }
+  }
+
+  // ✅ 예약 생성 (검증 추가)
   async addBooking(data: {
     facilityId: string;
     userName: string;
@@ -171,6 +195,40 @@ export class KioskService {
 
       const normalizedTimeSlot = data.timeSlot.replace(/\s/g, '');
 
+      // ✅ 1. 같은 날, 같은 실습실에 이미 예약한 개수 확인
+      if (data.phone) {
+        const existingBookings = await prisma.booking.count({
+          where: {
+            facilityId: data.facilityId,
+            date: new Date(data.date),
+            phone: data.phone,
+            status: 'active',
+          },
+        });
+
+        // ✅ 2. 이미 2개 이상 예약했으면 거부
+        if (existingBookings >= 2) {
+          throw new BadRequestException(
+            '같은 날, 같은 실습실은 1인당 최대 2시간까지만 예약 가능합니다.'
+          );
+        }
+      }
+
+      // ✅ 3. 해당 시간대에 이미 예약이 있는지 확인
+      const conflictBooking = await prisma.booking.findFirst({
+        where: {
+          facilityId: data.facilityId,
+          date: new Date(data.date),
+          timeSlot: normalizedTimeSlot,
+          status: 'active',
+        },
+      });
+
+      if (conflictBooking) {
+        throw new BadRequestException('해당 시간대는 이미 예약되었습니다.');
+      }
+
+      // ✅ 4. 예약 생성
       const booking = await prisma.booking.create({
         data: {
           facilityId: data.facilityId,
@@ -223,163 +281,162 @@ export class KioskService {
     return { success: true, message: '예약이 취소되었습니다.' };
   }
 
- // ✅ getApplications 함수
-async getApplications(programId?: number) {
-  try {
-    const whereClause: any = {};
-    
-    if (programId) {
-      whereClause.program_id = programId;
-    }
-
-    const applications = await prisma.programApplication.findMany({
-      where: whereClause,
-      include: {
-        program: true,
-      },
-      orderBy: { applied_at: 'asc' },
-    });
-
-    console.log(`✅ 신청 목록 조회${programId ? ` (프로그램 ID: ${programId})` : ''}:`, applications.length, '건');
-
-    const result = applications.map((app, index) => {
-      const program = app.program;
-      const capacity = program.capacity || 0;
-      const approvedCount = applications.filter(a => a.program_id === app.program_id && a.status === 'approved').length;
+  async getApplications(programId?: number) {
+    try {
+      const whereClause: any = {};
       
-      let waitingNumber: number | null = null; // ✅ 타입 수정
-      let isWaiting = false;
+      if (programId) {
+        whereClause.program_id = programId;
+      }
 
-      if (app.status === 'pending' && capacity > 0) {
-        const pendingBeforeThis = applications.filter(
-          a => a.program_id === app.program_id && 
-               a.status === 'pending' && 
-               new Date(a.applied_at) < new Date(app.applied_at)
-        ).length;
+      const applications = await prisma.programApplication.findMany({
+        where: whereClause,
+        include: {
+          program: true,
+        },
+        orderBy: { applied_at: 'asc' },
+      });
 
-        if (approvedCount >= capacity) {
-          isWaiting = true;
-          waitingNumber = pendingBeforeThis + 1;
+      console.log(`✅ 신청 목록 조회${programId ? ` (프로그램 ID: ${programId})` : ''}:`, applications.length, '건');
+
+      const result = applications.map((app, index) => {
+        const program = app.program;
+        const capacity = program.capacity || 0;
+        const approvedCount = applications.filter(a => a.program_id === app.program_id && a.status === 'approved').length;
+        
+        let waitingNumber: number | null = null;
+        let isWaiting = false;
+
+        if (app.status === 'pending' && capacity > 0) {
+          const pendingBeforeThis = applications.filter(
+            a => a.program_id === app.program_id && 
+                 a.status === 'pending' && 
+                 new Date(a.applied_at) < new Date(app.applied_at)
+          ).length;
+
+          if (approvedCount >= capacity) {
+            isWaiting = true;
+            waitingNumber = pendingBeforeThis + 1;
+          }
         }
+
+        return {
+          id: app.id,
+          program_id: app.program_id,
+          applicant_name: app.applicant_name,
+          phone: app.phone,
+          status: app.status,
+          applied_at: app.applied_at,
+          program: app.program,
+          isWaiting,
+          waitingNumber,
+          programCapacity: capacity,
+          approvedCount,
+        };
+      });
+
+      return result;
+    } catch (error) {
+      console.error('❌ 신청 목록 조회 실패:', error);
+      throw error;
+    }
+  }
+
+  async addApplication(data: {
+    programId: number;
+    userName: string;
+    phone?: string;
+  }) {
+    try {
+      console.log('📥 프로그램 신청 요청:', data);
+
+      const program = await prisma.program.findUnique({
+        where: { id: data.programId }
+      });
+
+      if (!program) {
+        throw new Error('프로그램을 찾을 수 없습니다.');
+      }
+
+      if (data.phone) {
+        const existingApplication = await prisma.programApplication.findFirst({
+          where: {
+            program_id: data.programId,
+            phone: data.phone,
+          }
+        });
+
+        if (existingApplication) {
+          throw new Error('이미 이 전화번호로 신청한 프로그램입니다.');
+        }
+      }
+
+      const approvedCount = await prisma.programApplication.count({
+        where: {
+          program_id: data.programId,
+          status: 'approved',
+        }
+      });
+
+      const capacity = program.capacity || 0;
+      
+      let status = 'pending';
+      if (capacity > 0 && approvedCount >= capacity) {
+        status = 'pending';
+        console.log(`⏳ 정원 초과: 대기자로 등록 (현재 ${approvedCount}/${capacity})`);
+      }
+
+      const application = await prisma.programApplication.create({
+        data: {
+          program_id: data.programId,
+          user_id: null,
+          applicant_name: data.userName,
+          phone: data.phone,
+          status: status,
+        },
+        include: {
+          program: true,
+        },
+      });
+
+      console.log('✅ 프로그램 신청 완료:', application);
+
+      let waitingNumber: number | null = null;
+      let isWaiting = false;
+      
+      if (capacity > 0 && approvedCount >= capacity) {
+        const waitingCount = await prisma.programApplication.count({
+          where: {
+            program_id: data.programId,
+            status: 'pending',
+            applied_at: {
+              lt: application.applied_at
+            }
+          }
+        });
+        isWaiting = true;
+        waitingNumber = waitingCount + 1;
       }
 
       return {
-        id: app.id,
-        program_id: app.program_id,
-        applicant_name: app.applicant_name,
-        phone: app.phone,
-        status: app.status,
-        applied_at: app.applied_at,
-        program: app.program,
+        id: application.id,
+        program_id: application.program_id,
+        applicant_name: application.applicant_name,
+        phone: application.phone,
+        status: application.status,
+        applied_at: application.applied_at,
+        program: application.program,
         isWaiting,
         waitingNumber,
         programCapacity: capacity,
-        approvedCount,
+        approvedCount: approvedCount + (status === 'approved' ? 1 : 0),
       };
-    });
-
-    return result;
-  } catch (error) {
-    console.error('❌ 신청 목록 조회 실패:', error);
-    throw error;
+    } catch (error) {
+      console.error('❌ 프로그램 신청 실패:', error);
+      throw error;
+    }
   }
-}
 
-// ✅ addApplication 함수
-async addApplication(data: {
-  programId: number;
-  userName: string;
-  phone?: string;
-}) {
-  try {
-    console.log('📥 프로그램 신청 요청:', data);
-
-    const program = await prisma.program.findUnique({
-      where: { id: data.programId }
-    });
-
-    if (!program) {
-      throw new Error('프로그램을 찾을 수 없습니다.');
-    }
-
-    if (data.phone) {
-      const existingApplication = await prisma.programApplication.findFirst({
-        where: {
-          program_id: data.programId,
-          phone: data.phone,
-        }
-      });
-
-      if (existingApplication) {
-        throw new Error('이미 이 전화번호로 신청한 프로그램입니다.');
-      }
-    }
-
-    const approvedCount = await prisma.programApplication.count({
-      where: {
-        program_id: data.programId,
-        status: 'approved',
-      }
-    });
-
-    const capacity = program.capacity || 0;
-    
-    let status = 'pending';
-    if (capacity > 0 && approvedCount >= capacity) {
-      status = 'pending';
-      console.log(`⏳ 정원 초과: 대기자로 등록 (현재 ${approvedCount}/${capacity})`);
-    }
-
-    const application = await prisma.programApplication.create({
-      data: {
-        program_id: data.programId,
-        user_id: null,
-        applicant_name: data.userName,
-        phone: data.phone,
-        status: status,
-      },
-      include: {
-        program: true,
-      },
-    });
-
-    console.log('✅ 프로그램 신청 완료:', application);
-
-    let waitingNumber: number | null = null; // ✅ 타입 수정
-    let isWaiting = false;
-    
-    if (capacity > 0 && approvedCount >= capacity) {
-      const waitingCount = await prisma.programApplication.count({
-        where: {
-          program_id: data.programId,
-          status: 'pending',
-          applied_at: {
-            lt: application.applied_at
-          }
-        }
-      });
-      isWaiting = true;
-      waitingNumber = waitingCount + 1;
-    }
-
-    return {
-      id: application.id,
-      program_id: application.program_id,
-      applicant_name: application.applicant_name,
-      phone: application.phone,
-      status: application.status,
-      applied_at: application.applied_at,
-      program: application.program,
-      isWaiting,
-      waitingNumber,
-      programCapacity: capacity,
-      approvedCount: approvedCount + (status === 'approved' ? 1 : 0),
-    };
-  } catch (error) {
-    console.error('❌ 프로그램 신청 실패:', error);
-    throw error;
-  }
-}
   async deleteApplication(applicationId: number) {
     await prisma.programApplication.delete({
       where: { id: applicationId },
@@ -387,7 +444,6 @@ async addApplication(data: {
     return { success: true, message: '신청이 취소되었습니다.' };
   }
 
-  // ✅ 신청 승인 처리
   async approveApplication(applicationId: number) {
     try {
       const application = await prisma.programApplication.findUnique({
@@ -399,7 +455,6 @@ async addApplication(data: {
         throw new Error('신청을 찾을 수 없습니다.');
       }
 
-      // 정원 체크
       const capacity = application.program.capacity || 0;
       const approvedCount = await prisma.programApplication.count({
         where: {
@@ -412,7 +467,6 @@ async addApplication(data: {
         throw new Error('정원이 마감되었습니다.');
       }
 
-      // 승인 처리
       const updated = await prisma.programApplication.update({
         where: { id: applicationId },
         data: { status: 'approved' },
@@ -430,7 +484,6 @@ async addApplication(data: {
     }
   }
 
-  // ✅ 신청 거절 처리
   async rejectApplication(applicationId: number) {
     try {
       const updated = await prisma.programApplication.update({
