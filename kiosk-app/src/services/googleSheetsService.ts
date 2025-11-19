@@ -137,23 +137,43 @@ export async function getApplications() {
 }
 
 // 프로그램 신청 추가
+// 프로그램 신청 추가
 export async function addApplication(applicationData: {
   programId: number;
   userName: string;
   phone?: string;
 }) {
   try {
+    console.log('📤 addApplication 요청:', applicationData);
+    
     const response = await fetch(`${API_BASE}/applications`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(applicationData),
     });
     
-    if (!response.ok) {
-      throw new Error('프로그램 신청 실패');
+    const result = await response.json();
+    console.log('📥 addApplication 응답:', result);
+    
+    if (!response.ok || !result.success) {
+      throw new Error(result.error || result.message || '프로그램 신청 실패');
     }
     
-    return await response.json();
+    // ✅ 백엔드 응답을 프론트엔드 구조로 변환
+    const application = result.data;
+    return {
+      id: application.id,
+      programId: application.program_id,
+      userName: application.applicant_name, // ✅ applicant_name → userName
+      phone: application.phone || '',
+      status: application.status,
+      appliedAt: application.applied_at,
+      // ✅ 대기자 정보 추가
+      isWaiting: application.isWaiting,
+      waitingNumber: application.waitingNumber,
+      programCapacity: application.programCapacity,
+      approvedCount: application.approvedCount,
+    };
   } catch (error) {
     console.error('❌ Error adding application:', error);
     throw error;

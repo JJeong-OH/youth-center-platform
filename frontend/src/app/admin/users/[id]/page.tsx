@@ -18,7 +18,7 @@ export default function AdminUserDetailPage() {
   const fetchUserDetail = async () => {
     try {
       const token = localStorage.getItem('adminToken');
-      const response = await fetch(`http://localhost:3000/admin/users/${userId}`, {
+      const response = await fetch(`http://localhost:3001/api/admin/users/${userId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
