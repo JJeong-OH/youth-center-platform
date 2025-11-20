@@ -9,7 +9,7 @@ interface Facility {
   icon: string;
   description: string | null;
   capacity: number | null;
-  floor: string | null;  // ✅ 추가
+  floor: string | null;
   isActive: boolean;
   order: number;
 }
@@ -30,10 +30,11 @@ export default function FacilitiesPage() {
     icon: '🏢',
     description: '',
     capacity: '',
-    floor: '지하1층',  // ✅ 추가
+    floor: '지하1층',
     order: '0',
   });
 
+  // ✅ API URL 동적 설정
   const API_URL = typeof window !== 'undefined' && window.location.hostname === 'localhost'
     ? 'http://localhost:3001'
     : 'https://youth-center-platform.onrender.com';
@@ -66,7 +67,7 @@ export default function FacilitiesPage() {
       icon: '🏢',
       description: '',
       capacity: '',
-      floor: '지하1층',  // ✅ 추가
+      floor: '지하1층',
       order: '0',
     });
     setImageFile(null);
@@ -82,7 +83,7 @@ export default function FacilitiesPage() {
       icon: facility.icon,
       description: facility.description || '',
       capacity: facility.capacity?.toString() || '',
-      floor: facility.floor || '지하1층',  // ✅ 추가
+      floor: facility.floor || '지하1층',
       order: facility.order.toString(),
     });
 
@@ -131,7 +132,7 @@ export default function FacilitiesPage() {
       formDataToSend.append('name', formData.name);
       formDataToSend.append('description', formData.description);
       formDataToSend.append('capacity', formData.capacity);
-      formDataToSend.append('floor', formData.floor);  // ✅ 추가
+      formDataToSend.append('floor', formData.floor);
       formDataToSend.append('order', formData.order);
 
       if (useEmoji) {
@@ -190,8 +191,15 @@ export default function FacilitiesPage() {
     }
   };
 
+  // ✅ toggleActive 함수 수정 (FormData 방식으로 변경)
   const toggleActive = async (facility: Facility) => {
     const token = localStorage.getItem('adminToken');
+    
+    if (!token) {
+      alert('로그인이 필요합니다.');
+      router.push('/admin/login');
+      return;
+    }
     
     try {
       const formDataToSend = new FormData();
@@ -207,9 +215,14 @@ export default function FacilitiesPage() {
       
       if (response.ok) {
         fetchFacilities();
+      } else {
+        const data = await response.json();
+        console.error('Toggle failed:', data);
+        alert('상태 변경 실패: ' + (data.message || '알 수 없는 오류'));
       }
     } catch (error) {
       console.error('Failed to toggle active:', error);
+      alert('상태 변경 실패');
     }
   };
 

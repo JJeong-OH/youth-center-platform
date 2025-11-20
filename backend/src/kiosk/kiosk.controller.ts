@@ -70,15 +70,10 @@ export class KioskController {
     },
   ) {
     try {
-      const systemPrompts = {
-        counselor: `당신은 청소년센터의 친절한 AI 상담사입니다. 청소년들의 고민을 들어주고, 공감하며, 긍정적인 조언을 해주세요. 항상 안전하고 건전한 대화를 이끌어주세요.`,
-        recommender: `당신은 청소년센터의 프로그램 추천 AI입니다. 사용자의 관심사를 파악하여 적합한 프로그램을 추천해주세요. 프로그램 목록은 코딩, 댄스, 미술, 밴드, 영어회화 등이 있습니다.`,
-      };
-
+      // ✅ sessionId를 userId로 사용 (키오스크는 세션 기반)
       const response = await this.aiService.sendChatMessage(
         body.message,
         body.sessionId,
-        systemPrompts[body.type],
       );
 
       return {
@@ -140,7 +135,6 @@ export class KioskController {
     }
   }
 
-  // ✅ 예약 개수 확인 API
   @Get('bookings/check')
   async checkBookingCount(
     @Query('facilityId') facilityId: string,

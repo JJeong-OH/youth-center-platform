@@ -14,7 +14,7 @@ import { ProgramService } from './program.service';
 import { AuthGuard } from '@nestjs/passport';
 import { AdminGuard } from '../admin/admin.guard';
 
-@Controller('program') // ✅ 'api/program' → 'program'으로 변경
+@Controller('program')
 export class ProgramController {
   constructor(private readonly programService: ProgramService) {}
 

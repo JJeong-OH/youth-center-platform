@@ -28,7 +28,6 @@ export default function ChatPage() {
     return greetingMessages[index];
   };
 
-  // 초기에는 빈 배열로 시작
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -39,7 +38,6 @@ export default function ChatPage() {
   };
 
   useEffect(() => {
-    // 클라이언트에서만 랜덤 인삿말 추가
     const initialMessage: Message = {
       id: 1,
       text: getRandomGreeting(),
@@ -75,7 +73,12 @@ export default function ChatPage() {
         throw new Error('로그인이 필요합니다.');
       }
 
-      const response = await fetch('http://localhost:3000/ai/chat', {
+      // ✅ 동적 API URL 설정
+      const API_URL = typeof window !== 'undefined' && window.location.hostname === 'localhost'
+        ? 'http://localhost:3001'
+        : 'https://youth-center-platform.onrender.com';
+
+      const response = await fetch(`${API_URL}/api/ai/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

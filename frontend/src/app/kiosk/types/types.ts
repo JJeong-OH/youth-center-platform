@@ -8,11 +8,25 @@ export interface ChatMessage {
   functionCall?: FunctionCall;
 }
 
+// ✅ DB 구조에 맞게 수정
 export interface Program {
-  id: string;
-  name: string;
-  description: string;
-  category: string;
+  id: number;
+  title: string;
+  department?: string;
+  startDate?: Date | string;
+  endDate?: Date | string;
+  targetAudience?: string;
+  capacity?: number;
+  fee: number;
+  recruitStatus?: string;
+  description?: string;
+  imageUrl?: string;
+  tags?: any;
+  isActive?: boolean;
+  order?: number;
+  createdBy?: number;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
 }
 
 export interface Facility {
@@ -26,17 +40,23 @@ export interface Facility {
 export interface Booking {
   bookingId: string;
   facilityId: string;
-  date: string; // YYYY-MM-DD
+  date: string;
   timeSlot: string;
   userName: string;
   phoneNumber: string;
-  pin: string; // 4-digit string
+  pin: string;
 }
 
+// ✅ ProgramApplication도 수정
 export interface ProgramApplication {
-  applicationId: string;
-  programId: string;
-  userName: string;
-  phoneNumber: string;
-  pin: string;
+  id: string | number;
+  programId: string | number;
+  userName?: string;
+  phone?: string;
+  status?: string;
+  appliedAt?: Date | string;
+  // 구글 시트 호환
+  applicationId?: string;
+  phoneNumber?: string;
+  pin?: string;
 }

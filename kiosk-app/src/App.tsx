@@ -8,26 +8,33 @@ import { ProgramRecommendation } from './components/ProgramRecommendation';
 
 function App() {
   const [currentView, setCurrentView] = useState<View>('landing');
+  // ✅ 시설 예약의 탭 모드 state 추가
+  const [facilityViewMode, setFacilityViewMode] = useState<'new' | 'check'>('new');
 
   const handleViewChange = (view: View) => {
     setCurrentView(view);
+    // 일반적인 경우는 '신규 예약' 탭으로
+    if (view === 'facilities') {
+      setFacilityViewMode('new');
+    }
   };
 
   const handleBackToLanding = () => {
     setCurrentView('landing');
+    setFacilityViewMode('new');
   };
 
-  // ✅ 예약확인 버튼 핸들러
+  // ✅ 예약확인 버튼 핸들러 - '예약 확인/취소' 탭으로 이동
   const handleCheckReservation = () => {
     setCurrentView('facilities');
-    // 필요시 FacilityReservation 컴포넌트에 viewMode='check' 전달 가능
+    setFacilityViewMode('check');  // ✅ 예약 확인 탭으로!
   };
 
   if (currentView === 'landing') {
     return (
       <Landing 
         onStart={handleViewChange} 
-        onCheckReservation={handleCheckReservation}  // ✅ 추가
+        onCheckReservation={handleCheckReservation}
       />
     );
   }
@@ -38,7 +45,12 @@ function App() {
       <main className="flex-grow p-4 md:p-6 max-w-7xl mx-auto w-full">
         <div className="bg-white rounded-2xl p-4 md:p-6 border border-gray-200 h-full shadow-lg">
           {currentView === 'counselor' && <AICounselor onBack={handleBackToLanding} />}
-          {currentView === 'facilities' && <FacilityReservation onBack={handleBackToLanding} />}
+          {currentView === 'facilities' && (
+            <FacilityReservation 
+              onBack={handleBackToLanding} 
+              initialViewMode={facilityViewMode}  // ✅ prop으로 전달
+            />
+          )}
           {currentView === 'recommend' && <ProgramRecommendation onBack={handleBackToLanding} />}
         </div>
       </main>

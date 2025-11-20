@@ -7,8 +7,4 @@ export default defineConfig({
     port: 5173,
     host: true,
   },
-  define: {
-    'import.meta.env.VITE_GEMINI_API_KEY': JSON.stringify('AIzaSyAksRD0RozXX23XkhvlxQeebn-MFY77g0E'),
-    'import.meta.env.VITE_API_BASE_URL': JSON.stringify('http://localhost:3001/api/kiosk'),
-  },
 })

@@ -1,7 +1,6 @@
 import React from 'react';
 import type { View } from '../types/types';
 
-// ... 기존 imports (이미지들)
 import logoUrl from '/src/assets/react.svg';
 import mainBotUrl from '/src/assets/image.png';
 import counselBotUrl from '/src/assets/image1.png';

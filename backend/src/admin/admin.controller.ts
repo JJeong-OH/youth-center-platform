@@ -6,7 +6,7 @@ import { AdminGuard } from './admin.guard';
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
 
-  // 관리자 로그인
+  // 관리자 로그인 (인증 불필요)
   @Post('login')
   async login(@Body() body: { email: string; password: string }) {
     try {
@@ -19,9 +19,9 @@ export class AdminController {
     }
   }
 
-  // 대시보드 통계
+  // ✅ 대시보드 통계 (인증 제거)
   @Get('dashboard')
-  @UseGuards(AdminGuard)
+  // @UseGuards(AdminGuard)  // 🔴 주석 처리
   async getDashboard() {
     try {
       return await this.adminService.getDashboardStats();
@@ -33,9 +33,9 @@ export class AdminController {
     }
   }
 
-  // 전체 회원 목록
+  // ✅ 전체 회원 목록 (인증 제거)
   @Get('users')
-  @UseGuards(AdminGuard)
+  // @UseGuards(AdminGuard)  // 🔴 주석 처리
   async getUsers(
     @Query('page') page: string = '1',
     @Query('limit') limit: string = '20',
@@ -53,9 +53,9 @@ export class AdminController {
     }
   }
 
-  // 회원 상세
+  // ✅ 회원 상세 (인증 제거)
   @Get('users/:id')
-  @UseGuards(AdminGuard)
+  // @UseGuards(AdminGuard)  // 🔴 주석 처리
   async getUserDetail(@Param('id') id: string) {
     try {
       return await this.adminService.getUserDetail(parseInt(id));
@@ -67,9 +67,9 @@ export class AdminController {
     }
   }
 
-  // 설문 통계
+  // ✅ 설문 통계 (인증 제거)
   @Get('surveys/stats')
-  @UseGuards(AdminGuard)
+  // @UseGuards(AdminGuard)  // 🔴 주석 처리
   async getSurveyStats() {
     try {
       return await this.adminService.getSurveyStats();
@@ -81,9 +81,9 @@ export class AdminController {
     }
   }
 
-  // ✅ 통합 사용자 통계
+  // ✅ 통합 사용자 통계 (인증 제거)
   @Get('integrated-users')
-  @UseGuards(AdminGuard)
+  // @UseGuards(AdminGuard)  // 🔴 주석 처리
   async getIntegratedUsers() {
     try {
       return await this.adminService.getIntegratedUserStats();
@@ -95,9 +95,9 @@ export class AdminController {
     }
   }
 
-  // ✅ 사용자 상세 조회 (전화번호 기준)
+  // ✅ 사용자 상세 조회 (인증 제거)
   @Get('user-detail/:phone')
-  @UseGuards(AdminGuard)
+  // @UseGuards(AdminGuard)  // 🔴 주석 처리
   async getUserDetailByPhone(@Param('phone') phone: string) {
     try {
       return await this.adminService.getUserDetailByPhone(phone);

@@ -4,7 +4,7 @@ import { sendMessageToRecommender } from '../services/geminiService';
 import { getPrograms, getApplications, addApplication as addApplicationService, deleteApplication as deleteApplicationService } from '../services/googleSheetsService';
 import type { ChatMessage, Program, ProgramApplication } from '../types/types';
 import { UserIcon, ChatBotIcon, SendIcon, LoadingIcon, CheckCircleIcon, XCircleIcon, InfoIcon, SparklesIcon, TicketIcon, ClipboardListIcon, PhoneIcon } from './Icons';
-import { BackButton } from './BackButton';  // ✅ 추가
+import { BackButton } from './BackButton';
 
 const ProgramApplicationModal: React.FC<{
   program: Program | null;
@@ -60,11 +60,11 @@ const ProgramApplicationModal: React.FC<{
                         <input type="text" value={userName} onChange={(e) => setUserName(e.target.value)} placeholder="이름 (한글 2자 이상)" className={`w-full bg-white/70 rounded-lg p-3 border ${errors.userName ? 'border-red-500' : 'border-slate-300'} focus:ring-2 focus:ring-indigo-500 focus:outline-none`} />
                         {errors.userName && <p className="text-red-600 text-sm mt-1">{errors.userName}</p>}
                     </div>
-                     <div>
+                    <div>
                         <input type="tel" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} placeholder="전화번호 ('-' 제외)" className={`w-full bg-white/70 rounded-lg p-3 border ${errors.phoneNumber ? 'border-red-500' : 'border-slate-300'} focus:ring-2 focus:ring-indigo-500 focus:outline-none`} />
                         {errors.phoneNumber && <p className="text-red-600 text-sm mt-1">{errors.phoneNumber}</p>}
                     </div>
-                     <div>
+                    <div>
                         <input type="password" value={pin} maxLength={4} onChange={(e) => setPin(e.target.value)} placeholder="비밀번호 4자리 설정" className={`w-full bg-white/70 rounded-lg p-3 border ${errors.pin ? 'border-red-500' : 'border-slate-300'} focus:ring-2 focus:ring-indigo-500 focus:outline-none`} />
                         {errors.pin && <p className="text-red-600 text-sm mt-1">{errors.pin}</p>}
                     </div>
@@ -111,10 +111,10 @@ const ApplicationSuccessModal: React.FC<{
                 )}
                 
                 <div className="text-left bg-slate-50/80 p-4 rounded-lg border border-slate-200/80 space-y-2 mb-8">
-                     <p className="flex items-center gap-2">
+                    <p className="flex items-center gap-2">
                         <TicketIcon className="w-5 h-5 text-indigo-500"/>
                         <strong>신청번호:</strong> {application.id}
-                     </p>
+                    </p>
                 </div>
                 <div className="flex justify-center">
                     <button 
@@ -163,7 +163,7 @@ const AIRecommendView: React.FC<{
     onNewApplication: (app: ProgramApplication) => void;
 }> = ({ programs, applications, onNewApplication }) => {
     const [messages, setMessages] = useState<ChatMessage[]>([
-        { role: 'model', text: '안녕하세요! 어떤 활동에 관심이 있으신가요? 대화를 통해 프로그램을 추천해드릴게요. 추천된 프로그램은 오른쪽에 나타나고, 바로 신청할 수도 있어요!' },
+        { role: 'model', text: '안녕! 😊 어떤 활동에 관심이 있어? 편하게 얘기해줘!' },
     ]);
     const [input, setInput] = useState('');
     const [isChatLoading, setIsChatLoading] = useState(false);
@@ -230,56 +230,64 @@ const AIRecommendView: React.FC<{
     }, [programs, applications, onNewApplication]);
 
     const handleSendMessage = useCallback(async () => {
-        if (input.trim() === '' || isChatLoading) return;
+    if (input.trim() === '' || isChatLoading) return;
 
-        const userMessage: ChatMessage = { role: 'user', text: input };
-        setMessages(prev => [...prev, userMessage]);
-        setInput('');
-        setIsChatLoading(true);
+    const userMessage: ChatMessage = { role: 'user', text: input };
+    setMessages(prev => [...prev, userMessage]);
+    setInput('');
+    setIsChatLoading(true);
 
-        try {
-            const response = await sendMessageToRecommender(userMessage.text);
-            
-            if (response.functionCalls && response.functionCalls.length > 0) {
-                 const systemMessage: ChatMessage = {
-                    role: 'system',
-                    text: `AI가 프로그램 신청을 도와드리려 합니다. 오른쪽 카드에서 '신청하기'를 눌러 계속 진행해주세요.`
-                 };
-                 setMessages(prev => [...prev, systemMessage]);
-            }
-
-            if (response.text) {
-                const modelMessage: ChatMessage = { role: 'model', text: response.text };
-                setMessages(prev => [...prev, modelMessage]);
-
-                const foundProgramIds = response.text.match(/\b\d+\b/g)?.map(Number) || [];
-                if (foundProgramIds.length > 0) {
-                    setRecommendedProgramIds(prev => [...new Set([...prev, ...foundProgramIds])]);
-                }
-            }
-        } catch (error) {
-            console.error(error);
-            const errorMessage: ChatMessage = { role: 'model', text: '죄송합니다. 오류가 발생했어요. 잠시 후 다시 시도해주세요.' };
-            setMessages(prev => [...prev, errorMessage]);
-        } finally {
-            setIsChatLoading(false);
+    try {
+        // ✅ programs 배열을 AI에게 전달
+        const response = await sendMessageToRecommender(userMessage.text, programs);
+        
+        if (response.functionCalls && response.functionCalls.length > 0) {
+            const systemMessage: ChatMessage = {
+                role: 'system',
+                text: `AI가 프로그램 신청을 도와드리려 합니다. 오른쪽 카드에서 '신청하기'를 눌러 계속 진행해주세요.`
+            };
+            setMessages(prev => [...prev, systemMessage]);
         }
-    }, [input, isChatLoading]);
 
+        if (response.text) {
+            const modelMessage: ChatMessage = { role: 'model', text: response.text };
+            setMessages(prev => [...prev, modelMessage]);
+
+            // ✅ 타입 명시 추가
+            const idMatches = response.text.match(/ID:\s*(\d+)/g);
+            const foundProgramIds = idMatches?.map((match: string) => {
+                const idMatch = match.match(/\d+/);
+                return idMatch ? Number(idMatch[0]) : null;
+            }).filter((id: number | null): id is number => id !== null) || [];
+            
+            console.log('추출된 프로그램 ID:', foundProgramIds);
+            
+            if (foundProgramIds.length > 0) {
+                setRecommendedProgramIds(prev => [...new Set([...prev, ...foundProgramIds])]);
+            }
+        }
+    } catch (error) {
+        console.error(error);
+        const errorMessage: ChatMessage = { role: 'model', text: '죄송합니다. 오류가 발생했어요. 잠시 후 다시 시도해주세요.' };
+        setMessages(prev => [...prev, errorMessage]);
+    } finally {
+        setIsChatLoading(false);
+    }
+}, [input, isChatLoading, programs]);
     const cancelApplication = () => {
         setManualApplicationTarget(null);
     };
-        const programsToDisplay = recommendedProgramIds.length > 0
+    
+    const programsToDisplay = recommendedProgramIds.length > 0
         ? programs.filter(p => recommendedProgramIds.includes(p.id))
         : programs;
 
     return (
-        // ✅ 세로 모드: flex-col, 가로 모드(lg): flex-row
         <div className="flex flex-col lg:flex-row h-full gap-6" style={{ paddingBottom: '160px' }}>
             {/* 채팅 영역 */}
             <div className="w-full lg:w-2/5 flex flex-col" style={{ 
                 minHeight: '300px', 
-                maxHeight: '50vh'  // ✅ 세로 모드에서 높이 제한
+                maxHeight: '50vh'
             }}>
                 <h3 className="text-xl font-bold text-slate-800 mb-4 px-2 flex items-center gap-2">
                     <SparklesIcon className="w-6 h-6" />
@@ -335,12 +343,12 @@ const AIRecommendView: React.FC<{
                 </div>
             </div>
             
-            {/* ✅ 프로그램 목록 영역 - 세로 모드에서도 표시 */}
+            {/* 프로그램 목록 영역 */}
             <div className="w-full lg:w-3/5 flex flex-col" style={{ minHeight: '300px' }}>
-                 <h3 className="text-xl font-bold text-slate-800 mb-4 px-2">
-                    {recommendedProgramIds.length > 0 ? '추천 프로그램' : '전체 프로그램 보기'}
-                 </h3>
-                 <div className="flex-grow overflow-y-auto custom-scrollbar pr-2 -mr-2">
+                <h3 className="text-xl font-bold text-slate-800 mb-4 px-2">
+                    {recommendedProgramIds.length > 0 ? '✨ 추천 프로그램' : '전체 프로그램 보기'}
+                </h3>
+                <div className="flex-grow overflow-y-auto custom-scrollbar pr-2 -mr-2">
                     <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 pb-4">
                         {programsToDisplay.map(program => (
                             <ProgramCard 
@@ -350,7 +358,7 @@ const AIRecommendView: React.FC<{
                             />
                         ))}
                     </div>
-                 </div>
+                </div>
             </div>
             
             {manualApplicationTarget && (
@@ -413,14 +421,14 @@ const CheckApplicationView: React.FC<{
 
     if (userApplications) {
         return (
-             <div className="flex-grow overflow-y-auto p-2 custom-scrollbar -mr-2" style={{ marginBottom: '140px' }}>
-                 <div className="flex justify-between items-center mb-4">
+            <div className="flex-grow overflow-y-auto p-2 custom-scrollbar -mr-2" style={{ marginBottom: '140px' }}>
+                <div className="flex justify-between items-center mb-4">
                     <h3 className="text-xl font-bold text-slate-800">나의 신청 내역</h3>
                     <button onClick={handleLogout} className="text-sm font-semibold hover:underline text-slate-600">다른 정보로 조회</button>
-                 </div>
-                 {userApplications.length === 0 ? (
+                </div>
+                {userApplications.length === 0 ? (
                     <p className="text-center text-slate-500 mt-8">신청한 프로그램이 없습니다.</p>
-                 ) : (
+                ) : (
                     <div className="space-y-4 pr-2">
                         {userApplications.map(app => {
                             const program = programs.find(p => p.id === Number(app.programId));
@@ -454,7 +462,7 @@ const CheckApplicationView: React.FC<{
                             );
                         })}
                     </div>
-                 )}
+                )}
             </div>
         );
     }
@@ -467,14 +475,13 @@ const CheckApplicationView: React.FC<{
                 <div className="space-y-4">
                     <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="전화번호 ('-' 제외)" className="w-full bg-white/70 rounded-lg p-3 border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
                 </div>
-                 {error && <p className="text-red-600 text-sm mt-4 font-semibold">{error}</p>}
+                {error && <p className="text-red-600 text-sm mt-4 font-semibold">{error}</p>}
                 <button onClick={handleCheck} className="w-full mt-6 px-4 py-3 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold transition-colors">신청 현황 확인</button>
             </div>
         </div>
     );
 };
 
-// ✅ 메인 컴포넌트에 onBack props 추가
 export const ProgramRecommendation: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     const [programs, setPrograms] = useState<Program[]>([]);
     const [isDataLoading, setIsDataLoading] = useState(true);
@@ -528,7 +535,7 @@ export const ProgramRecommendation: React.FC<{ onBack?: () => void }> = ({ onBac
 
     const renderView = () => {
         if (isDataLoading) {
-             return (
+            return (
                 <div className="flex-grow flex items-center justify-center h-full">
                     <LoadingIcon className="w-10 h-10 text-indigo-500" />
                 </div>
@@ -547,7 +554,7 @@ export const ProgramRecommendation: React.FC<{ onBack?: () => void }> = ({ onBac
 
     return (
         <div className="flex flex-col h-full">
-             <div className="flex items-center justify-between mb-4 px-2">
+            <div className="flex items-center justify-between mb-4 px-2">
                 <h2 className="text-2xl md:text-3xl font-bold text-indigo-600">프로그램 추천/신청</h2>
                 <div className="flex items-center p-1 rounded-xl bg-white/70 border border-white/30 shadow-sm">
                     <button 
@@ -565,7 +572,7 @@ export const ProgramRecommendation: React.FC<{ onBack?: () => void }> = ({ onBac
                         신청 현황 확인
                     </button>
                 </div>
-             </div>
+            </div>
 
             {notification && (
                 <div className={`px-4 py-3 rounded-xl mb-4 flex items-center gap-3 text-sm ${notification.type === 'success' ? 'bg-green-100 border border-green-300 text-green-800' : 'bg-red-100 border border-red-300 text-red-800'}`}>
@@ -578,7 +585,6 @@ export const ProgramRecommendation: React.FC<{ onBack?: () => void }> = ({ onBac
                 {renderView()}
             </div>
 
-            {/* ✅ 뒤로가기 버튼 */}
             {onBack && <BackButton onClick={onBack} label="← 메인으로 돌아가기" />}
         </div>
     );

@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { UsersIcon, CheckCircleIcon, XCircleIcon, CalendarIcon, TicketIcon, LoadingIcon, UserIcon, PhoneIcon } from './Icons';
-import { BackButton } from './BackButton';  // ✅ 추가
+import { BackButton } from './BackButton';  
 
 const API_URL = typeof window !== 'undefined' && window.location.hostname === 'localhost'
   ? 'http://localhost:3001'
@@ -13,7 +13,7 @@ type Facility = {
   icon: string;
   description: string | null;
   capacity: number | null;
-  floor: string | null;  // ✅ 추가
+  floor: string | null; 
   isActive: boolean;
 };
 
@@ -258,7 +258,6 @@ const FacilityCard: React.FC<{
         </div>
         <div className="flex flex-col flex-grow">
           <h3 className="text-xl font-bold text-slate-800">{facility.name}</h3>
-          {/* ✅ 층 정보 표시 */}
           {facility.floor && (
             <div className="text-sm font-semibold text-purple-600 mt-1">
               📍 {facility.floor}
@@ -366,7 +365,6 @@ const FacilityCard: React.FC<{
   );
 };
 
-// ✅ 층별로 그룹화된 NewReservationView
 const NewReservationView: React.FC<{ 
   facilities: Facility[];
   bookings: Booking[], 
@@ -378,7 +376,6 @@ const NewReservationView: React.FC<{
     const [successInfo, setSuccessInfo] = useState<Booking[]>([]);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-    // ✅ 층별로 그룹화
     const facilitiesByFloor = facilities.reduce((acc, facility) => {
       const floor = facility.floor || '기타';
       if (!acc[floor]) {
@@ -388,7 +385,6 @@ const NewReservationView: React.FC<{
       return acc;
     }, {} as Record<string, Facility[]>);
 
-    // ✅ 층 순서 정의
     const floorOrder = ['지하1층', '3층', '4층', '기타'];
     const sortedFloors = floorOrder.filter(floor => facilitiesByFloor[floor]);
 
@@ -479,16 +475,14 @@ const NewReservationView: React.FC<{
               </div>
             )}
 
-            {/* ✅ 층별로 표시 */}
             <div style={{ 
               display: 'flex', 
               flexDirection: 'column', 
               gap: '24px',
-              marginBottom: '140px'  // 뒤로가기 버튼 공간
+              marginBottom: '140px'
             }}>
               {sortedFloors.map(floor => (
                 <div key={floor}>
-                  {/* 층 헤더 */}
                   <h3 style={{
                     fontSize: '22px',
                     fontWeight: '700',
@@ -502,7 +496,6 @@ const NewReservationView: React.FC<{
                     📍 {floor}
                   </h3>
 
-                  {/* 실습실 그리드 */}
                   <div style={{
                     display: 'grid',
                     gridTemplateColumns: `repeat(auto-fit, minmax(300px, 1fr))`,
@@ -645,13 +638,21 @@ const CheckReservationView: React.FC<{
     );
 };
 
-// ✅ 메인 컴포넌트에 onBack props 추가
-export const FacilityReservation: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
+// ✅ props 타입 수정
+export const FacilityReservation: React.FC<{ 
+  onBack?: () => void;
+  initialViewMode?: 'new' | 'check';
+}> = ({ onBack, initialViewMode = 'new' }) => {
   const [facilities, setFacilities] = useState<Facility[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [notification, setNotification] = useState<{type: 'success' | 'error', message: string} | null>(null);
-  const [viewMode, setViewMode] = useState<'new' | 'check'>('new');
+  const [viewMode, setViewMode] = useState<'new' | 'check'>(initialViewMode);
+  
+  // ✅ initialViewMode가 변경되면 viewMode 업데이트
+  useEffect(() => {
+    setViewMode(initialViewMode);
+  }, [initialViewMode]);
   
   const fetchData = async () => {
     try {
@@ -768,7 +769,6 @@ export const FacilityReservation: React.FC<{ onBack?: () => void }> = ({ onBack 
       
       {renderView()}
 
-      {/* ✅ 뒤로가기 버튼 */}
       {onBack && <BackButton onClick={onBack} label="← 메인으로 돌아가기" />}
     </div>
   );

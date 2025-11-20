@@ -1,65 +1,60 @@
-// kiosk-app/src/types/types.ts
+import type { FunctionCall } from '@google/genai';
 
+// ✅ 'landing' 추가
 export type View = 'landing' | 'counselor' | 'facilities' | 'recommend';
+
+export interface ChatMessage {
+  role: 'user' | 'model' | 'system';
+  text: string;
+  functionCall?: FunctionCall;
+}
+
+export interface Program {
+  id: number;
+  title: string;
+  department?: string;
+  startDate?: Date | string;
+  endDate?: Date | string;
+  targetAudience?: string;
+  capacity?: number;
+  fee: number;
+  recruitStatus?: string;
+  description?: string;
+  imageUrl?: string;
+  tags?: string[] | string;
+  isActive?: boolean;
+  order?: number;
+  createdBy?: number;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+}
 
 export interface Facility {
   id: string;
   name: string;
   description: string;
   capacity: number;
-  icon: string; // 이전 수정 사항
+  image: string;
 }
 
 export interface Booking {
-  id: string | number;
+  bookingId: string;
   facilityId: string;
-  facilityName: string;
-  userName: string;
   date: string;
   timeSlot: string;
-  status: string;
-  phone?: string; // 이전 수정 사항
+  userName: string;
+  phoneNumber: string;
+  pin: string;
 }
 
 export interface ProgramApplication {
-  id: number;
-  programId: number;
-  userName: string;  // ✅ 이 필드가 있어야 함
+  id: string | number;
+  programId: string | number;
+  userName?: string;
   phone?: string;
-  status: string;
-  appliedAt?: string;
-  // ✅ 추가 필드
-  isWaiting?: boolean;
-  waitingNumber?: number | null;
-  programCapacity?: number;
-  approvedCount?: number;
-}
-
-// ✨ YouthProgram -> Program으로 변경 및 필드 수정!
-export interface Program {
-  id: number; // React 코드에서 number로 사용 (recommendedProgramIds: number[])
-  name: string;
-  title: string; // React 코드에서 사용 (program.title)
-  category: string;
-  description: string;
-  schedule: string;
-  capacity: number;
-  currentParticipants: number;
-  department?: string; // React 코드에서 사용 (program.department)
-  targetAudience?: string; // React 코드에서 사용 (program.targetAudience)
-  fee?: number; // React 코드에서 사용 (program.fee)
-}
-
-export interface YouthFacility {
-  id: string;
-  name: string;
-  description: string;
-  capacity: number;
-  available: boolean;
-}
-
-// ✨ ChatMessage 타입 추가 (React 코드에서 사용)
-export interface ChatMessage {
-  role: 'user' | 'model' | 'system';
-  text: string;
+  status?: string;
+  appliedAt?: Date | string;
+  applicationId?: string;
+  phoneNumber?: string;
+  pin?: string;
 }

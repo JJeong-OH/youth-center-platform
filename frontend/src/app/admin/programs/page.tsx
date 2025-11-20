@@ -59,10 +59,15 @@ export default function ProgramsPage() {
     order: '0',
   });
 
+  // ✅ API URL 동적 설정
+  const API_URL = typeof window !== 'undefined' && window.location.hostname === 'localhost'
+    ? 'http://localhost:3001'
+    : 'https://youth-center-platform.onrender.com';
+
   const fetchPrograms = async () => {
     try {
       const token = localStorage.getItem('adminToken');
-      const response = await fetch('http://localhost:3001/api/program/all?includeInactive=true', {
+      const response = await fetch(`${API_URL}/api/program/all?includeInactive=true`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -128,8 +133,8 @@ export default function ProgramsPage() {
     }
     
     const url = editingProgram
-      ? `http://localhost:3001/api/program/${editingProgram.id}`
-      : 'http://localhost:3001/api/program/create';
+      ? `${API_URL}/api/program/${editingProgram.id}`
+      : `${API_URL}/api/program/create`;
     
     const method = editingProgram ? 'PUT' : 'POST';
     
@@ -182,7 +187,7 @@ export default function ProgramsPage() {
     }
     
     try {
-      const response = await fetch(`http://localhost:3001/api/program/${id}`, {
+      const response = await fetch(`${API_URL}/api/program/${id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -203,6 +208,7 @@ export default function ProgramsPage() {
     }
   };
 
+  // ✅ toggleActive 함수 수정 (JSON 유지)
   const toggleActive = async (program: Program) => {
     const token = localStorage.getItem('adminToken');
     
@@ -213,20 +219,27 @@ export default function ProgramsPage() {
     }
     
     try {
-      const response = await fetch(`http://localhost:3001/api/program/${program.id}`, {
+      const response = await fetch(`${API_URL}/api/program/${program.id}`, {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ isActive: !program.isActive }),
+        body: JSON.stringify({ 
+          isActive: !program.isActive 
+        }),
       });
       
       if (response.ok) {
         fetchPrograms();
+      } else {
+        const data = await response.json();
+        console.error('Toggle failed:', data);
+        alert('상태 변경 실패: ' + (data.message || '알 수 없는 오류'));
       }
     } catch (error) {
       console.error('Failed to toggle active:', error);
+      alert('상태 변경 실패');
     }
   };
 
@@ -239,7 +252,7 @@ export default function ProgramsPage() {
     setLoadingApplicants(true);
     try {
       const token = localStorage.getItem('adminToken');
-      const response = await fetch(`http://localhost:3001/api/kiosk/applications?programId=${programId}`, {
+      const response = await fetch(`${API_URL}/api/kiosk/applications?programId=${programId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -274,7 +287,7 @@ export default function ProgramsPage() {
     
     try {
       const token = localStorage.getItem('adminToken');
-      const response = await fetch(`http://localhost:3001/api/kiosk/applications/${applicationId}/approve`, {
+      const response = await fetch(`${API_URL}/api/kiosk/applications/${applicationId}/approve`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -302,7 +315,7 @@ export default function ProgramsPage() {
     
     try {
       const token = localStorage.getItem('adminToken');
-      const response = await fetch(`http://localhost:3001/api/kiosk/applications/${applicationId}/reject`, {
+      const response = await fetch(`${API_URL}/api/kiosk/applications/${applicationId}/reject`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -325,13 +338,12 @@ export default function ProgramsPage() {
     }
   };
 
-  // ✅ 삭제 핸들러 추가
   const handleDeleteApplication = async (applicationId: number) => {
     if (!confirm('이 신청을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) return;
     
     try {
       const token = localStorage.getItem('adminToken');
-      const response = await fetch(`http://localhost:3001/api/kiosk/applications/${applicationId}`, {
+      const response = await fetch(`${API_URL}/api/kiosk/applications/${applicationId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
