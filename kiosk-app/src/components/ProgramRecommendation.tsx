@@ -171,9 +171,17 @@ const AIRecommendView: React.FC<{
     const [recommendedProgramIds, setRecommendedProgramIds] = useState<number[]>([]);
     const [applicationSuccessInfo, setApplicationSuccessInfo] = useState<ProgramApplication | null>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    
+    // ✅ 메시지 개수로 판단 (초기 메시지는 1개)
+    const prevMessageCount = useRef(1);
 
+    // ✅ 메시지가 추가되었을 때만 스크롤
     useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        // 메시지 개수가 증가했을 때만 스크롤
+        if (messages.length > prevMessageCount.current) {
+            messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        }
+        prevMessageCount.current = messages.length;
     }, [messages]);
 
     const handleConfirmApplication = useCallback(async (programId: number, details: { userName: string; phoneNumber: string; pin: string }) => {
@@ -230,50 +238,49 @@ const AIRecommendView: React.FC<{
     }, [programs, applications, onNewApplication]);
 
     const handleSendMessage = useCallback(async () => {
-    if (input.trim() === '' || isChatLoading) return;
+        if (input.trim() === '' || isChatLoading) return;
 
-    const userMessage: ChatMessage = { role: 'user', text: input };
-    setMessages(prev => [...prev, userMessage]);
-    setInput('');
-    setIsChatLoading(true);
+        const userMessage: ChatMessage = { role: 'user', text: input };
+        setMessages(prev => [...prev, userMessage]);
+        setInput('');
+        setIsChatLoading(true);
 
-    try {
-        // ✅ programs 배열을 AI에게 전달
-        const response = await sendMessageToRecommender(userMessage.text, programs);
-        
-        if (response.functionCalls && response.functionCalls.length > 0) {
-            const systemMessage: ChatMessage = {
-                role: 'system',
-                text: `AI가 프로그램 신청을 도와드리려 합니다. 오른쪽 카드에서 '신청하기'를 눌러 계속 진행해주세요.`
-            };
-            setMessages(prev => [...prev, systemMessage]);
-        }
-
-        if (response.text) {
-            const modelMessage: ChatMessage = { role: 'model', text: response.text };
-            setMessages(prev => [...prev, modelMessage]);
-
-            // ✅ 타입 명시 추가
-            const idMatches = response.text.match(/ID:\s*(\d+)/g);
-            const foundProgramIds = idMatches?.map((match: string) => {
-                const idMatch = match.match(/\d+/);
-                return idMatch ? Number(idMatch[0]) : null;
-            }).filter((id: number | null): id is number => id !== null) || [];
+        try {
+            const response = await sendMessageToRecommender(userMessage.text, programs);
             
-            console.log('추출된 프로그램 ID:', foundProgramIds);
-            
-            if (foundProgramIds.length > 0) {
-                setRecommendedProgramIds(prev => [...new Set([...prev, ...foundProgramIds])]);
+            if (response.functionCalls && response.functionCalls.length > 0) {
+                const systemMessage: ChatMessage = {
+                    role: 'system',
+                    text: `AI가 프로그램 신청을 도와드리려 합니다. 오른쪽 카드에서 '신청하기'를 눌러 계속 진행해주세요.`
+                };
+                setMessages(prev => [...prev, systemMessage]);
             }
+
+            if (response.text) {
+                const modelMessage: ChatMessage = { role: 'model', text: response.text };
+                setMessages(prev => [...prev, modelMessage]);
+
+                const idMatches = response.text.match(/ID:\s*(\d+)/g);
+                const foundProgramIds = idMatches?.map((match: string) => {
+                    const idMatch = match.match(/\d+/);
+                    return idMatch ? Number(idMatch[0]) : null;
+                }).filter((id: number | null): id is number => id !== null) || [];
+                
+                console.log('추출된 프로그램 ID:', foundProgramIds);
+                
+                if (foundProgramIds.length > 0) {
+                    setRecommendedProgramIds(prev => [...new Set([...prev, ...foundProgramIds])]);
+                }
+            }
+        } catch (error) {
+            console.error(error);
+            const errorMessage: ChatMessage = { role: 'model', text: '죄송합니다. 오류가 발생했어요. 잠시 후 다시 시도해주세요.' };
+            setMessages(prev => [...prev, errorMessage]);
+        } finally {
+            setIsChatLoading(false);
         }
-    } catch (error) {
-        console.error(error);
-        const errorMessage: ChatMessage = { role: 'model', text: '죄송합니다. 오류가 발생했어요. 잠시 후 다시 시도해주세요.' };
-        setMessages(prev => [...prev, errorMessage]);
-    } finally {
-        setIsChatLoading(false);
-    }
-}, [input, isChatLoading, programs]);
+    }, [input, isChatLoading, programs]);
+
     const cancelApplication = () => {
         setManualApplicationTarget(null);
     };
@@ -284,17 +291,24 @@ const AIRecommendView: React.FC<{
 
     return (
         <div className="flex flex-col lg:flex-row h-full gap-6" style={{ paddingBottom: '160px' }}>
-            {/* 채팅 영역 */}
+            {/* ✅ 채팅 영역 - 스크롤 가능 */}
             <div className="w-full lg:w-2/5 flex flex-col" style={{ 
                 minHeight: '300px', 
-                maxHeight: '50vh'
+                maxHeight: '60vh'  // ✅ 높이 제한
             }}>
                 <h3 className="text-xl font-bold text-slate-800 mb-4 px-2 flex items-center gap-2">
                     <SparklesIcon className="w-6 h-6" />
                     AI 추천 채팅
                 </h3>
-                <div className="flex-grow flex flex-col bg-white/50 rounded-xl border border-white/30">
-                    <div className="flex-grow overflow-y-auto p-4 space-y-6 custom-scrollbar">
+                <div className="flex-grow flex flex-col bg-white/50 rounded-xl border border-white/30 overflow-hidden">
+                    {/* ✅ 메시지 영역 - 스크롤 가능 */}
+                    <div 
+                        className="flex-grow overflow-y-auto p-4 space-y-6"
+                        style={{ 
+                            maxHeight: '400px',
+                            scrollBehavior: 'smooth'
+                        }}
+                    >
                         {messages.map((msg, index) => (
                             msg.role === 'system' ? (
                                 <div key={index} className="flex items-center gap-3 text-sm text-slate-500 justify-center">
@@ -321,7 +335,8 @@ const AIRecommendView: React.FC<{
                         )}
                         <div ref={messagesEndRef} />
                     </div>
-                    <div className="mt-auto p-4">
+                    {/* 입력창 */}
+                    <div className="mt-auto p-4 border-t border-white/30">
                         <div className="flex items-center bg-white/50 backdrop-blur-lg rounded-xl p-2 border border-white/30 focus-within:ring-2 focus-within:ring-indigo-500 shadow-sm">
                             <input
                                 type="text" value={input}
@@ -343,12 +358,19 @@ const AIRecommendView: React.FC<{
                 </div>
             </div>
             
-            {/* 프로그램 목록 영역 */}
-            <div className="w-full lg:w-3/5 flex flex-col" style={{ minHeight: '300px' }}>
+            {/* ✅ 프로그램 목록 영역 - 스크롤 가능 */}
+            <div className="w-full lg:w-3/5 flex flex-col" style={{ minHeight: '300px', maxHeight: '70vh' }}>
                 <h3 className="text-xl font-bold text-slate-800 mb-4 px-2">
                     {recommendedProgramIds.length > 0 ? '✨ 추천 프로그램' : '전체 프로그램 보기'}
                 </h3>
-                <div className="flex-grow overflow-y-auto custom-scrollbar pr-2 -mr-2">
+                {/* ✅ 스크롤 가능한 프로그램 목록 */}
+                <div 
+                    className="flex-grow overflow-y-auto pr-2"
+                    style={{ 
+                        maxHeight: 'calc(70vh - 60px)',
+                        scrollBehavior: 'smooth'
+                    }}
+                >
                     <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 pb-4">
                         {programsToDisplay.map(program => (
                             <ProgramCard 
@@ -421,7 +443,7 @@ const CheckApplicationView: React.FC<{
 
     if (userApplications) {
         return (
-            <div className="flex-grow overflow-y-auto p-2 custom-scrollbar -mr-2" style={{ marginBottom: '140px' }}>
+            <div className="flex-grow overflow-y-auto p-2" style={{ marginBottom: '140px', maxHeight: '60vh' }}>
                 <div className="flex justify-between items-center mb-4">
                     <h3 className="text-xl font-bold text-slate-800">나의 신청 내역</h3>
                     <button onClick={handleLogout} className="text-sm font-semibold hover:underline text-slate-600">다른 정보로 조회</button>

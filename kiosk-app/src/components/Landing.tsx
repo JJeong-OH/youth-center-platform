@@ -9,7 +9,7 @@ import facilityBotUrl from '/src/assets/image3.png';
 
 interface LandingProps {
   onStart: (view: View) => void;
-  onCheckReservation?: () => void;  // ✅ 추가
+  onCheckReservation?: () => void;  
 }
 
 const ActionCard: React.FC<{
