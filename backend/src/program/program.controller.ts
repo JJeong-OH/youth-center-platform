@@ -122,7 +122,7 @@ export class ProgramController {
     }
   }
 
-  // 프로그램 삭제 (관리자용 - soft delete)
+  // ✅ 프로그램 삭제 (Hard Delete - DB에서 완전 삭제)
   @Delete(':id')
   @UseGuards(AdminGuard)
   async deleteProgram(@Param('id') id: string) {
@@ -136,12 +136,12 @@ export class ProgramController {
     }
   }
 
-  // 프로그램 완전 삭제 (관리자용)
-  @Delete(':id/hard')
+  // ✅ 프로그램 비활성화 (Soft Delete)
+  @Put(':id/deactivate')
   @UseGuards(AdminGuard)
-  async hardDeleteProgram(@Param('id') id: string) {
+  async deactivateProgram(@Param('id') id: string) {
     try {
-      return await this.programService.hardDeleteProgram(parseInt(id));
+      return await this.programService.deactivateProgram(parseInt(id));
     } catch (error) {
       return {
         success: false,

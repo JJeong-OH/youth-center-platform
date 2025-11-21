@@ -67,18 +67,18 @@ export class ProgramService {
     };
   }
 
-// 전체 프로그램 목록 (includeInactive 파라미터 추가)
-async getAllPrograms(includeInactive = false) {
-  const programs = await prisma.program.findMany({
-    where: includeInactive ? {} : { isActive: true },
-    orderBy: { order: 'asc' },
-  });
+  // 전체 프로그램 목록 (includeInactive 파라미터 추가)
+  async getAllPrograms(includeInactive = false) {
+    const programs = await prisma.program.findMany({
+      where: includeInactive ? {} : { isActive: true },
+      orderBy: { order: 'asc' },
+    });
 
-  return {
-    success: true,
-    programs: programs,
-  };
-}
+    return {
+      success: true,
+      programs: programs,
+    };
+  }
 
   // 프로그램 1개 조회
   async getProgramById(id: number) {
@@ -181,29 +181,15 @@ async getAllPrograms(includeInactive = false) {
     }
   }
 
-  // 프로그램 삭제 (soft delete)
+  // ✅ 프로그램 삭제 (Hard Delete로 변경!)
   async deleteProgram(id: number) {
     try {
-      const program = await prisma.program.update({
-        where: { id },
-        data: { isActive: false },
+      // 먼저 관련 신청 내역 삭제
+      await prisma.programApplication.deleteMany({
+        where: { program_id: id },
       });
 
-      return {
-        success: true,
-        message: '프로그램이 삭제되었습니다.',
-      };
-    } catch (error) {
-      return {
-        success: false,
-        message: '프로그램을 찾을 수 없습니다.',
-      };
-    }
-  }
-
-  // 프로그램 완전 삭제
-  async hardDeleteProgram(id: number) {
-    try {
+      // 프로그램 삭제
       await prisma.program.delete({
         where: { id },
       });
@@ -213,9 +199,30 @@ async getAllPrograms(includeInactive = false) {
         message: '프로그램이 완전히 삭제되었습니다.',
       };
     } catch (error) {
+      console.error('프로그램 삭제 에러:', error);
       return {
         success: false,
-        message: '프로그램을 삭제할 수 없습니다.',
+        message: '프로그램을 삭제할 수 없습니다. 관련 데이터를 확인해주세요.',
+      };
+    }
+  }
+
+  // 프로그램 비활성화 (Soft Delete)
+  async deactivateProgram(id: number) {
+    try {
+      const program = await prisma.program.update({
+        where: { id },
+        data: { isActive: false },
+      });
+
+      return {
+        success: true,
+        message: '프로그램이 비활성화되었습니다.',
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: '프로그램을 찾을 수 없습니다.',
       };
     }
   }
