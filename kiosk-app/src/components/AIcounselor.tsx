@@ -50,12 +50,13 @@ export const AICounselor: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       const response = await sendMessageToCounselor(userMessage.text);
       if (response.functionCalls && response.functionCalls.length > 0) {
         const fc = response.functionCalls[0];
-        if (fc.name === 'bookFacility' && fc.args.facilityId && fc.args.userName && fc.args.facilityName) {
-             setBookingRequest({ 
-               facilityId: fc.args.facilityId, 
-               userName: fc.args.userName,
-               facilityName: fc.args.facilityName 
-             });
+        // ✅ setBookingRequest로 수정!
+        if (fc.name === 'bookFacility' && fc.args?.facilityId && fc.args?.userName && fc.args?.facilityName) {
+          setBookingRequest({
+            facilityId: String(fc.args.facilityId),
+            userName: String(fc.args.userName),
+            facilityName: String(fc.args.facilityName)
+          });
         }
       }
 
@@ -92,11 +93,9 @@ export const AICounselor: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   };
 
   return (
-    // ✅ 하단 여백을 더 크게 (입력창 + 뒤로가기 버튼 공간)
     <div className="flex flex-col h-full" style={{ paddingBottom: '200px' }}>
       <h2 className="text-2xl md:text-3xl font-bold text-indigo-600 mb-4 px-2">AI 고민 상담</h2>
       
-      {/* ✅ 메시지 영역 */}
       <div className="flex-grow overflow-y-auto p-2 space-y-6 custom-scrollbar">
         {messages.map((msg, index) => {
           if (msg.role === 'system') {
@@ -130,10 +129,9 @@ export const AICounselor: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         <div ref={messagesEndRef} />
       </div>
       
-      {/* ✅ 입력창 - fixed 위치 조정 */}
       <div style={{
         position: 'fixed',
-        bottom: '120px',  // ✅ 뒤로가기 버튼 위로
+        bottom: '120px',
         left: '50%',
         transform: 'translateX(-50%)',
         width: '90%',
@@ -169,7 +167,6 @@ export const AICounselor: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         />
       )}
 
-      {/* 뒤로가기 버튼 */}
       {onBack && <BackButton onClick={onBack} label="← 메인으로 돌아가기" />}
     </div>
   );
