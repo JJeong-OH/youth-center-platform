@@ -130,19 +130,19 @@ const ApplicationSuccessModal: React.FC<{
 };
 
 const ProgramCard: React.FC<{ program: Program, onApply: (program: Program) => void }> = ({ program, onApply }) => (
-    <div className="bg-white/70 backdrop-blur-xl rounded-2xl shadow-lg border border-white/30 p-5 flex flex-col transition-all duration-300 hover:shadow-xl hover:border-white">
-        <h3 className="text-lg font-bold text-slate-800">{program.title}</h3>
-        <p className="text-sm font-semibold text-indigo-500 my-1">{program.department || '청소년센터'}</p>
-        <p className="text-slate-600 mt-2 flex-grow text-sm">{program.description}</p>
+    <div className="bg-white/70 backdrop-blur-xl rounded-xl shadow-lg border border-white/30 p-4 flex flex-col transition-all duration-300 hover:shadow-xl hover:border-white">
+        <h3 className="text-base font-bold text-slate-800 line-clamp-2">{program.title}</h3>
+        <p className="text-xs font-semibold text-indigo-500 my-1">{program.department || '청소년센터'}</p>
+        <p className="text-slate-600 mt-1 flex-grow text-xs line-clamp-2">{program.description}</p>
         
-        <div className="mt-3 flex flex-wrap gap-2">
+        <div className="mt-2 flex flex-wrap gap-1">
             {program.targetAudience && (
-                <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
+                <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
                     {program.targetAudience}
                 </span>
             )}
             {program.fee !== undefined && (
-                <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
+                <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
                     {program.fee === 0 ? '무료' : `${program.fee.toLocaleString()}원`}
                 </span>
             )}
@@ -150,7 +150,7 @@ const ProgramCard: React.FC<{ program: Program, onApply: (program: Program) => v
         
         <button 
           onClick={() => onApply(program)}
-          className="mt-4 w-full px-4 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-indigo-600 text-white font-semibold hover:opacity-90 transition-opacity duration-200 transform active:scale-95 shadow-md"
+          className="mt-3 w-full px-3 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-indigo-600 text-white text-sm font-semibold hover:opacity-90 transition-opacity duration-200 transform active:scale-95 shadow-md"
         >
           신청하기
         </button>
@@ -172,12 +172,9 @@ const AIRecommendView: React.FC<{
     const [applicationSuccessInfo, setApplicationSuccessInfo] = useState<ProgramApplication | null>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     
-    // ✅ 메시지 개수로 판단 (초기 메시지는 1개)
     const prevMessageCount = useRef(1);
 
-    // ✅ 메시지가 추가되었을 때만 스크롤
     useEffect(() => {
-        // 메시지 개수가 증가했을 때만 스크롤
         if (messages.length > prevMessageCount.current) {
             messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
         }
@@ -266,8 +263,6 @@ const AIRecommendView: React.FC<{
                     return idMatch ? Number(idMatch[0]) : null;
                 }).filter((id: number | null): id is number => id !== null) || [];
                 
-                console.log('추출된 프로그램 ID:', foundProgramIds);
-                
                 if (foundProgramIds.length > 0) {
                     setRecommendedProgramIds(prev => [...new Set([...prev, ...foundProgramIds])]);
                 }
@@ -290,88 +285,138 @@ const AIRecommendView: React.FC<{
         : programs;
 
     return (
-        <div className="flex flex-col lg:flex-row h-full gap-6" style={{ paddingBottom: '160px' }}>
-            {/* ✅ 채팅 영역 - 스크롤 가능 */}
-            <div className="w-full lg:w-2/5 flex flex-col" style={{ 
-                minHeight: '300px', 
-                maxHeight: '60vh'  // ✅ 높이 제한
+        <div 
+            style={{ 
+                display: 'flex', 
+                flexDirection: 'row',
+                height: '100%',
+                gap: '16px',
+                paddingBottom: '100px',
+                overflow: 'hidden'
+            }}
+        >
+            {/* 채팅 영역 - 40% */}
+            <div style={{ 
+                width: '40%',
+                minWidth: '280px',
+                display: 'flex',
+                flexDirection: 'column',
+                height: '100%',
+                maxHeight: 'calc(100vh - 280px)'
             }}>
-                <h3 className="text-xl font-bold text-slate-800 mb-4 px-2 flex items-center gap-2">
-                    <SparklesIcon className="w-6 h-6" />
+                <h3 className="text-lg font-bold text-slate-800 mb-3 px-2 flex items-center gap-2" style={{ flexShrink: 0 }}>
+                    <SparklesIcon className="w-5 h-5" />
                     AI 추천 채팅
                 </h3>
-                <div className="flex-grow flex flex-col bg-white/50 rounded-xl border border-white/30 overflow-hidden">
-                    {/* ✅ 메시지 영역 - 스크롤 가능 */}
+                <div style={{ 
+                    flex: 1, 
+                    display: 'flex', 
+                    flexDirection: 'column',
+                    backgroundColor: 'rgba(255,255,255,0.5)',
+                    borderRadius: '12px',
+                    border: '1px solid rgba(255,255,255,0.3)',
+                    overflow: 'hidden'
+                }}>
+                    {/* 메시지 영역 */}
                     <div 
-                        className="flex-grow overflow-y-auto p-4 space-y-6"
                         style={{ 
-                            maxHeight: '400px',
-                            scrollBehavior: 'smooth'
+                            flex: 1,
+                            overflowY: 'auto',
+                            padding: '12px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '16px'
                         }}
                     >
                         {messages.map((msg, index) => (
                             msg.role === 'system' ? (
-                                <div key={index} className="flex items-center gap-3 text-sm text-slate-500 justify-center">
-                                    <InfoIcon className="w-5 h-5"/>
+                                <div key={index} className="flex items-center gap-2 text-xs text-slate-500 justify-center">
+                                    <InfoIcon className="w-4 h-4"/>
                                     <span>{msg.text}</span>
                                 </div>
                             ) : (
-                                <div key={index} className={`flex items-start gap-4 ${msg.role === 'user' ? 'justify-end' : ''}`}>
-                                    {msg.role === 'model' && <div className="w-10 h-10 rounded-full bg-indigo-500 flex items-center justify-center flex-shrink-0 shadow-lg"><ChatBotIcon className="w-6 h-6 text-white"/></div>}
-                                    <div className={`max-w-md px-5 py-3 rounded-2xl shadow-md ${msg.role === 'user' ? 'bg-gradient-to-br from-pink-500 to-orange-400 text-white rounded-br-none' : 'bg-white rounded-bl-none text-slate-700'}`}>
+                                <div key={index} className={`flex items-start gap-2 ${msg.role === 'user' ? 'justify-end' : ''}`}>
+                                    {msg.role === 'model' && (
+                                        <div className="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center flex-shrink-0 shadow">
+                                            <ChatBotIcon className="w-4 h-4 text-white"/>
+                                        </div>
+                                    )}
+                                    <div className={`max-w-[85%] px-3 py-2 rounded-xl shadow text-sm ${
+                                        msg.role === 'user' 
+                                            ? 'bg-gradient-to-br from-pink-500 to-orange-400 text-white rounded-br-none' 
+                                            : 'bg-white rounded-bl-none text-slate-700'
+                                    }`}>
                                         <p className="whitespace-pre-wrap leading-relaxed">{msg.text}</p>
                                     </div>
-                                    {msg.role === 'user' && <div className="w-10 h-10 rounded-full bg-slate-300 flex items-center justify-center flex-shrink-0 shadow-lg"><UserIcon className="w-6 h-6 text-slate-600"/></div>}
+                                    {msg.role === 'user' && (
+                                        <div className="w-8 h-8 rounded-full bg-slate-300 flex items-center justify-center flex-shrink-0 shadow">
+                                            <UserIcon className="w-4 h-4 text-slate-600"/>
+                                        </div>
+                                    )}
                                 </div>
                             )
                         ))}
                         {isChatLoading && (
-                            <div className="flex items-start gap-4">
-                                <div className="w-10 h-10 rounded-full bg-indigo-500 flex items-center justify-center flex-shrink-0 shadow-lg"><ChatBotIcon className="w-6 h-6 text-white"/></div>
-                                <div className="max-w-lg px-5 py-3 rounded-2xl bg-white rounded-bl-none flex items-center shadow-md">
-                                    <LoadingIcon className="w-6 h-6 text-indigo-500" />
+                            <div className="flex items-start gap-2">
+                                <div className="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center flex-shrink-0 shadow">
+                                    <ChatBotIcon className="w-4 h-4 text-white"/>
+                                </div>
+                                <div className="px-3 py-2 rounded-xl bg-white rounded-bl-none shadow">
+                                    <LoadingIcon className="w-5 h-5 text-indigo-500" />
                                 </div>
                             </div>
                         )}
                         <div ref={messagesEndRef} />
                     </div>
+                    
                     {/* 입력창 */}
-                    <div className="mt-auto p-4 border-t border-white/30">
-                        <div className="flex items-center bg-white/50 backdrop-blur-lg rounded-xl p-2 border border-white/30 focus-within:ring-2 focus-within:ring-indigo-500 shadow-sm">
+                    <div style={{ padding: '12px', borderTop: '1px solid rgba(255,255,255,0.3)', flexShrink: 0 }}>
+                        <div className="flex items-center bg-white/50 backdrop-blur-lg rounded-lg p-1.5 border border-white/30 focus-within:ring-2 focus-within:ring-indigo-500 shadow-sm">
                             <input
-                                type="text" value={input}
+                                type="text" 
+                                value={input}
                                 onChange={(e) => setInput(e.target.value)}
                                 onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
                                 placeholder="관심사를 알려주세요..."
-                                className="w-full bg-transparent p-2 text-lg focus:outline-none placeholder-slate-500"
+                                className="w-full bg-transparent p-2 text-sm focus:outline-none placeholder-slate-500"
                                 disabled={isChatLoading}
                             />
                             <button
                                 onClick={handleSendMessage}
                                 disabled={isChatLoading || input.trim() === ''}
-                                className="p-3 rounded-lg bg-gradient-to-r from-purple-500 to-indigo-600 hover:opacity-90 disabled:from-slate-400 disabled:to-slate-400 disabled:cursor-not-allowed transition-all duration-200 transform active:scale-95 shadow-md"
+                                className="p-2 rounded-lg bg-gradient-to-r from-purple-500 to-indigo-600 hover:opacity-90 disabled:from-slate-400 disabled:to-slate-400 disabled:cursor-not-allowed transition-all duration-200 transform active:scale-95 shadow"
                             >
-                                <SendIcon className="w-6 h-6 text-white" />
+                                <SendIcon className="w-5 h-5 text-white" />
                             </button>
                         </div>
                     </div>
                 </div>
             </div>
             
-            {/* ✅ 프로그램 목록 영역 - 스크롤 가능 */}
-            <div className="w-full lg:w-3/5 flex flex-col" style={{ minHeight: '300px', maxHeight: '70vh' }}>
-                <h3 className="text-xl font-bold text-slate-800 mb-4 px-2">
+            {/* 프로그램 목록 영역 - 60% */}
+            <div style={{ 
+                width: '60%',
+                display: 'flex',
+                flexDirection: 'column',
+                height: '100%',
+                maxHeight: 'calc(100vh - 280px)',
+                overflow: 'hidden'
+            }}>
+                <h3 className="text-lg font-bold text-slate-800 mb-3 px-2" style={{ flexShrink: 0 }}>
                     {recommendedProgramIds.length > 0 ? '✨ 추천 프로그램' : '전체 프로그램 보기'}
                 </h3>
-                {/* ✅ 스크롤 가능한 프로그램 목록 */}
-                <div 
-                    className="flex-grow overflow-y-auto pr-2"
-                    style={{ 
-                        maxHeight: 'calc(70vh - 60px)',
-                        scrollBehavior: 'smooth'
-                    }}
-                >
-                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 pb-4">
+                {/* 프로그램 스크롤 영역 */}
+                <div style={{ 
+                    flex: 1,
+                    overflowY: 'auto',
+                    paddingRight: '8px'
+                }}>
+                    <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+                        gap: '12px',
+                        paddingBottom: '20px'
+                    }}>
                         {programsToDisplay.map(program => (
                             <ProgramCard 
                                 key={program.id} 
@@ -383,6 +428,7 @@ const AIRecommendView: React.FC<{
                 </div>
             </div>
             
+            {/* 모달들 */}
             {manualApplicationTarget && (
                 <ProgramApplicationModal
                     program={manualApplicationTarget}
@@ -443,7 +489,13 @@ const CheckApplicationView: React.FC<{
 
     if (userApplications) {
         return (
-            <div className="flex-grow overflow-y-auto p-2" style={{ marginBottom: '140px', maxHeight: '60vh' }}>
+            <div style={{ 
+                flex: 1, 
+                overflowY: 'auto', 
+                padding: '8px',
+                paddingBottom: '140px',
+                maxHeight: 'calc(100vh - 280px)'
+            }}>
                 <div className="flex justify-between items-center mb-4">
                     <h3 className="text-xl font-bold text-slate-800">나의 신청 내역</h3>
                     <button onClick={handleLogout} className="text-sm font-semibold hover:underline text-slate-600">다른 정보로 조회</button>
@@ -575,38 +627,42 @@ export const ProgramRecommendation: React.FC<{ onBack?: () => void }> = ({ onBac
     };
 
     return (
-        <div className="flex flex-col h-full">
-            <div className="flex items-center justify-between mb-4 px-2">
-                <h2 className="text-2xl md:text-3xl font-bold text-indigo-600">프로그램 추천/신청</h2>
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+            {/* 헤더 - 고정 */}
+            <div className="flex items-center justify-between mb-4 px-2" style={{ flexShrink: 0 }}>
+                <h2 className="text-xl md:text-2xl font-bold text-indigo-600">프로그램 추천/신청</h2>
                 <div className="flex items-center p-1 rounded-xl bg-white/70 border border-white/30 shadow-sm">
                     <button 
                         onClick={() => setViewMode('recommend')}
-                        className={`px-4 py-2 text-sm font-semibold rounded-lg transition-colors duration-200 flex items-center gap-2 ${viewMode === 'recommend' ? 'bg-indigo-500 text-white shadow' : 'text-slate-600 hover:bg-white/50'}`}
+                        className={`px-3 py-1.5 text-sm font-semibold rounded-lg transition-colors duration-200 flex items-center gap-1 ${viewMode === 'recommend' ? 'bg-indigo-500 text-white shadow' : 'text-slate-600 hover:bg-white/50'}`}
                     >
-                        <SparklesIcon className="w-5 h-5" />
-                        AI 추천/신청      
+                        <SparklesIcon className="w-4 h-4" />
+                        AI 추천
                     </button>
                     <button
                         onClick={() => setViewMode('check')}
-                        className={`px-4 py-2 text-sm font-semibold rounded-lg transition-colors duration-200 flex items-center gap-2 ${viewMode === 'check' ? 'bg-indigo-500 text-white shadow' : 'text-slate-600 hover:bg-white/50'}`}
+                        className={`px-3 py-1.5 text-sm font-semibold rounded-lg transition-colors duration-200 flex items-center gap-1 ${viewMode === 'check' ? 'bg-indigo-500 text-white shadow' : 'text-slate-600 hover:bg-white/50'}`}
                     >
-                        <ClipboardListIcon className="w-5 h-5" />
-                        신청 현황 확인
+                        <ClipboardListIcon className="w-4 h-4" />
+                        신청 확인
                     </button>
                 </div>
             </div>
 
+            {/* 알림 */}
             {notification && (
-                <div className={`px-4 py-3 rounded-xl mb-4 flex items-center gap-3 text-sm ${notification.type === 'success' ? 'bg-green-100 border border-green-300 text-green-800' : 'bg-red-100 border border-red-300 text-red-800'}`}>
-                {notification.type === 'success' ? <CheckCircleIcon className="w-5 h-5"/> : <XCircleIcon className="w-5 h-5"/>}
-                <p>{notification.message}</p>
+                <div className={`px-4 py-3 rounded-xl mb-4 flex items-center gap-3 text-sm ${notification.type === 'success' ? 'bg-green-100 border border-green-300 text-green-800' : 'bg-red-100 border border-red-300 text-red-800'}`} style={{ flexShrink: 0 }}>
+                    {notification.type === 'success' ? <CheckCircleIcon className="w-5 h-5"/> : <XCircleIcon className="w-5 h-5"/>}
+                    <p>{notification.message}</p>
                 </div>
             )}
             
-            <div className="flex-grow overflow-hidden">
+            {/* 콘텐츠 영역 */}
+            <div style={{ flex: 1, overflow: 'hidden' }}>
                 {renderView()}
             </div>
 
+            {/* 뒤로가기 버튼 */}
             {onBack && <BackButton onClick={onBack} label="← 메인으로 돌아가기" />}
         </div>
     );
