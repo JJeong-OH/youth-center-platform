@@ -1,0 +1,153 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               Int       @id @default(autoincrement())
+  name             String
+  email            String    @unique
+  password_hash    String
+  phone_number     String?   @map("phone_number")  // ✅ 추가!
+  dob              DateTime? @map("date_of_birth") // ✅ 추가!
+  gender           String?                          // ✅ 추가!
+  role             String    @default("USER")
+  created_at       DateTime  @default(now())
+  updated_at       DateTime  @updatedAt            // ✅ 추가!
+  
+  profiles         Profile[]
+  test_results     TestResult[]
+  chat_histories   ChatHistory[]
+  created_programs Program[]
+  bookings         Booking[]
+  applications     ProgramApplication[]
+  
+  @@map("users")
+}
+
+model Profile {
+  id          Int      @id @default(autoincrement())
+  user_id     Int
+  grade       String?
+  phone       String?
+  interests   Json?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  
+  user        User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@map("profiles")
+}
+
+model TestResult {
+  id         Int      @id @default(autoincrement())
+  user_id    Int
+  answers    Json
+  scores     Json?
+  created_at DateTime @default(now())
+  
+  user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@map("test_results")
+}
+
+model ChatHistory {
+  id         Int      @id @default(autoincrement())
+  user_id    Int
+  messages   Json
+  created_at DateTime @default(now())
+  
+  user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@map("chat_histories")
+}
+
+model Program {
+  id              Int       @id @default(autoincrement())
+  title           String
+  department      String?
+  startDate       DateTime? @map("start_date")
+  endDate         DateTime? @map("end_date")
+  targetAudience  String?   @map("target_audience")
+  capacity        Int?
+  fee             Int       @default(0)
+  recruitStatus   String    @default("모집중") @map("recruit_status")
+  description     String?   @db.Text
+  imageUrl        String?   @map("image_url")
+  tags            Json?
+  isActive        Boolean   @default(true) @map("is_active")
+  order           Int       @default(0)
+  createdBy       Int?      @map("created_by")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  
+  creator         User?     @relation(fields: [createdBy], references: [id])
+  applications    ProgramApplication[]
+  
+  @@map("programs")
+}
+
+model ProgramApplication {
+  id             Int      @id @default(autoincrement())
+  program_id     Int
+  user_id        Int?
+  applicant_name String
+  phone          String?
+  status         String   @default("pending")
+  applied_at     DateTime @default(now())
+  
+  program        Program  @relation(fields: [program_id], references: [id], onDelete: Cascade)
+  user           User?    @relation(fields: [user_id], references: [id], onDelete: SetNull)
+  
+  @@map("program_applications")
+}
+
+model Facility {
+  id          String    @id @default(cuid())
+  name        String
+  icon        String    @default("🏢")
+  description String?
+  capacity    Int?
+  floor       String?
+  isActive    Boolean   @default(true)
+  order       Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @default(now()) @updatedAt  
+  bookings    Booking[]
+  
+  @@map("facilities")
+}
+
+model Booking {
+  id         Int      @id @default(autoincrement())
+  userId     Int?     @map("user_id")
+  facilityId String   @map("facility_id")
+  userName   String   @map("user_name")
+  date       DateTime
+  timeSlot   String   @map("time_slot")
+  phone      String?
+  status     String   @default("active")
+  source     String   @default("kiosk")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  user     User?    @relation(fields: [userId], references: [id])
+  facility Facility @relation(fields: [facilityId], references: [id])
+
+  @@map("bookings")
+}
+
+model PortfolioItem {
+  id          Int      @id @default(autoincrement())
+  user_id     Int
+  title       String
+  description String?  @db.Text
+  type        String
+  date        DateTime?
+  created_at  DateTime @default(now())
+  
+  @@map("portfolio_items")
+}
