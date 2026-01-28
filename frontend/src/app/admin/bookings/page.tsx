@@ -22,9 +22,9 @@ interface Booking {
   status: string;
   source: string;
   created_at: string;
-  facility: {
+  facility: {  // ✅ 여기!
     name: string;
-  };
+  } | null;  // ✅ null 추가!
 }
 
 export default function BookingsPage() {
@@ -48,6 +48,7 @@ export default function BookingsPage() {
   const menuItems = [
     { path: '/admin/dashboard', label: '대시보드', icon: '■' },
     { path: '/admin/users', label: '회원 관리', icon: '■' },
+    { path: '/admin/integrated-users', label: '통합 회원 관리', icon: '■' }, 
     { path: '/admin/programs', label: '프로그램 관리', icon: '■' },
     { path: '/admin/facilities', label: '시설 관리', icon: '■' },
     { path: '/admin/bookings', label: '예약 관리', icon: '■' },
@@ -282,10 +283,11 @@ export default function BookingsPage() {
 
       {/* 메인 컨텐츠 */}
       <main style={{
-        marginLeft: '260px',
-        flex: 1,
-        padding: '32px 40px'
-      }}>
+  marginLeft: '260px',
+  flex: 1,
+  padding: '32px 40px',
+  width: 'calc(100vw - 260px)' 
+}}>
         <div style={{ marginBottom: '32px' }}>
           <h2 style={{
             fontSize: '28px',
@@ -537,10 +539,12 @@ export default function BookingsPage() {
                     <tr key={booking.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
                       <td style={tableCellStyle}>#{booking.id}</td>
                       {selectedFacility === 'all' && (
-                        <td style={tableCellStyle}>
-                          <strong style={{ color: '#0f172a' }}>{booking.facility.name}</strong>
-                        </td>
-                      )}
+  <td style={tableCellStyle}>
+    <strong style={{ color: '#0f172a' }}>
+      {booking.facility?.name || '삭제된 시설'}  {/* ✅ 옵셔널 체이닝 */}
+    </strong>
+  </td>
+)}
                       <td style={tableCellStyle}>
                         <strong style={{ color: '#0f172a' }}>{booking.user_name}</strong>
                       </td>

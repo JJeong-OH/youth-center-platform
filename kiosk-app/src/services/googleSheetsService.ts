@@ -1,6 +1,5 @@
 const API_BASE = 'http://localhost:3001/api/kiosk';
 
-// 시설 목록 조회
 export async function getFacilities() {
   try {
     const response = await fetch(`${API_BASE}/facilities`);
@@ -12,35 +11,31 @@ export async function getFacilities() {
   }
 }
 
-// 예약 목록 조회
 export async function getBookings() {
   try {
     const response = await fetch(`${API_BASE}/bookings`);
     const data = await response.json();
     
-    console.log('📥 getBookings 응답:', data); // ✅ 디버깅
+    console.log('📥 getBookings 응답:', data);
     
-    // 백엔드에서 오는 데이터 구조에 맞게 변환
     const bookings = Array.isArray(data) ? data : (data.bookings || []);
     
     return bookings.map((booking: any) => ({
       id: booking.id,
-      facilityId: booking.facility_id, // ✅ facility_id로 수정
-      facilityName: booking.facility?.name || '', // ✅ 시설명
-      userName: booking.user_name, // ✅ user_name으로 수정
+      facilityId: booking.facility_id,
+      facilityName: booking.facility?.name || '',
+      userName: booking.user_name, 
       date: booking.date,
-      timeSlot: booking.time_slot, // ✅ time_slot으로 수정
+      timeSlot: booking.time_slot, 
       phone: booking.phone || '',
       status: booking.status,
-      createdAt: booking.created_at // ✅ created_at으로 수정
+      createdAt: booking.created_at 
     }));
   } catch (error) {
     console.error('❌ Error fetching bookings:', error);
     return [];
   }
 }
-
-// 예약 추가
 export async function addBooking(bookingData: {
   facilityId: string;
   userName: string;
@@ -49,7 +44,7 @@ export async function addBooking(bookingData: {
   phone?: string;
 }) {
   try {
-    console.log('📤 addBooking 요청:', bookingData); // ✅ 디버깅
+    console.log('📤 addBooking 요청:', bookingData);
     
     const response = await fetch(`${API_BASE}/bookings`, {
       method: 'POST',
@@ -58,13 +53,12 @@ export async function addBooking(bookingData: {
     });
     
     const result = await response.json();
-    console.log('📥 addBooking 응답:', result); // ✅ 디버깅
+    console.log('📥 addBooking 응답:', result); // 
     
     if (!response.ok || !result.success) {
       throw new Error(result.error || result.message || '예약 추가 실패');
     }
     
-    // ✅ 백엔드 응답을 프론트엔드 구조로 변환
     const booking = result.data;
     return {
       id: booking.id,
@@ -137,7 +131,6 @@ export async function getApplications() {
 }
 
 // 프로그램 신청 추가
-// 프로그램 신청 추가
 export async function addApplication(applicationData: {
   programId: number;
   userName: string;
@@ -159,16 +152,14 @@ export async function addApplication(applicationData: {
       throw new Error(result.error || result.message || '프로그램 신청 실패');
     }
     
-    // ✅ 백엔드 응답을 프론트엔드 구조로 변환
     const application = result.data;
     return {
       id: application.id,
       programId: application.program_id,
-      userName: application.applicant_name, // ✅ applicant_name → userName
+      userName: application.applicant_name, 
       phone: application.phone || '',
       status: application.status,
       appliedAt: application.applied_at,
-      // ✅ 대기자 정보 추가
       isWaiting: application.isWaiting,
       waitingNumber: application.waitingNumber,
       programCapacity: application.programCapacity,

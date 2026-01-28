@@ -11,7 +11,7 @@ import { AiModule } from '../ai/ai.module';  // ← 이것만 추가!
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => {
-        const secret = configService.get<string>('JWT_SECRET');
+        const secret = configService.get<string>('JWT_ACCESS_SECRET');
         if (!secret) {
           throw new Error('JWT_SECRET is not defined in .env file');
         }

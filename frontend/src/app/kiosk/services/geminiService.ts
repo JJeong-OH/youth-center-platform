@@ -162,12 +162,13 @@ export const sendMessageToCounselor = async (message: string) => {
   }
 };
 
+// ✅ any[]를 명시적으로 선언
 export const sendMessageToRecommender = async (
   message: string,
-  programs: Program[] = []
+  programs: any[] = [] // ✅ 기본값 추가
 ) => {
   try {
-    const programsList = programs.map((p: Program) => {
+    const programsList = programs.map((p: any) => {
       const tags = Array.isArray(p.tags) ? p.tags.join(', ') : '';
       return `- ID: ${p.id} | ${p.title} | 부서: ${p.department || '청소년센터'} | 대상: ${p.targetAudience || '전체'} | 비용: ${p.fee === 0 ? '무료' : p.fee + '원'} | 설명: ${p.description || '없음'} ${tags ? '| 태그: ' + tags : ''}`;
     }).join('\n');

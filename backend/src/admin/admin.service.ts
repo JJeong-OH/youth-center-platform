@@ -125,43 +125,58 @@ export class AdminService {
   }
 
   // 전체 회원 목록
-  async getAllUsers(page: number = 1, limit: number = 20) {
+async getAllUsers(page: number = 1, limit: number = 20) {
+  try {
     const skip = (page - 1) * limit;
 
     const [users, total] = await Promise.all([
       this.prisma.user.findMany({
         skip,
         take: limit,
-        orderBy: { created_at: 'desc' },
-        include: {
-          profiles: true,
-          test_results: true,
-          bookings: true,
+        select: {
+          id: true,  // ✅ id 선택
+          name: true,
+          email: true,
+          phone_number: true,  // ✅ 전화번호 추가
+          role: true,
+          created_at: true,
+          _count: {
+            select: {
+              test_results: true,
+              bookings: true,
+            }
+          }
         },
+        orderBy: {
+          created_at: 'desc'
+        }
       }),
-      this.prisma.user.count(),
+      this.prisma.user.count()
     ]);
 
     return {
       success: true,
-      users: users.map((u) => ({
-        userId: u.id,
-        name: u.name,
-        email: u.email,
-        role: u.role,
-        createdAt: u.created_at,
-        surveyCount: u.test_results.length,
-        bookingCount: u.bookings.length,
-        profile: u.profiles[0] || null,
+      users: users.map(user => ({
+        userId: user.id,  // ✅ id를 userId로 매핑
+        name: user.name,
+        email: user.email,
+        phoneNumber: user.phone_number,  // ✅ phone_number를 phoneNumber로 매핑
+        role: user.role,
+        createdAt: user.created_at,
+        surveyCount: user._count.test_results,
+        bookingCount: user._count.bookings,
       })),
       pagination: {
-        page,
-        limit,
-        total,
+        currentPage: page,
         totalPages: Math.ceil(total / limit),
-      },
+        totalUsers: total,
+        limit
+      }
     };
+  } catch (error) {
+    throw new Error('회원 목록 조회에 실패했습니다.');
   }
+}
 
   // 회원 상세 정보
   async getUserDetail(userId: number) {
@@ -469,4 +484,36 @@ export class AdminService {
       throw error;
     }
   }
+async deleteUser(userId: number) {
+  try {
+    await this.prisma.user.delete({
+      where: { id: userId }  // ✅ userId가 아니라 id를 사용!
+    });
+    
+    return {
+      success: true,
+      message: '회원이 삭제되었습니다.'
+    };
+  } catch (error) {
+    throw new Error('회원 삭제에 실패했습니다.');
+  }
+}
+// ✅ 프로그램 수정 함수 (맨 아래 추가)
+async updateProgram(programId: number, updateData: any) {
+  try {
+    const updatedProgram = await this.prisma.program.update({
+      where: { id: programId },
+      data: updateData
+    });
+    
+    return {
+      success: true,
+      program: updatedProgram,
+      message: '프로그램이 수정되었습니다.'
+    };
+  } catch (error) {
+    throw new Error('프로그램 수정에 실패했습니다.');
+  }
+}
+  
 }

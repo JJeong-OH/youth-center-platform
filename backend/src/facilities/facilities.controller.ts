@@ -11,6 +11,7 @@ import {
   UseInterceptors,
   UploadedFile,
   BadRequestException,
+  Req,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
@@ -77,8 +78,8 @@ export class FacilitiesController {
         icon,
         description: body.description,
         capacity: body.capacity ? parseInt(body.capacity) : undefined,
-        floor: body.floor || null,  // ✅ 추가
-        order: body.order ? parseInt(body.order) : 0,
+        floor: body.floor || null,
+        order: body.order ? parseInt(body.order) : undefined, // ✅ 0 → undefined
       });
     } catch (error) {
       return {
@@ -95,22 +96,39 @@ export class FacilitiesController {
     @Param('id') id: string,
     @Body() body: any,
     @UploadedFile() file?: any,
+    @Req() req?: any,
   ) {
     try {
-      const updateData: any = {
-        name: body.name,
-        description: body.description,
-        capacity: body.capacity ? parseInt(body.capacity) : undefined,
-        floor: body.floor || null,  // ✅ 추가
-        order: body.order ? parseInt(body.order) : 0,
-      };
+      // ✅ Content-Type이 JSON인지 확인
+      const isJson = req?.headers['content-type']?.includes('application/json');
+      
+      const updateData: any = {};
 
+      // ✅ undefined가 아닌 필드만 추가
+      if (body.name !== undefined) {
+        updateData.name = body.name;
+      }
+      if (body.description !== undefined) {
+        updateData.description = body.description;
+      }
+      if (body.capacity !== undefined) {
+        updateData.capacity = parseInt(body.capacity);
+      }
+      if (body.floor !== undefined) {
+        updateData.floor = body.floor;
+      }
+      if (body.order !== undefined) {
+        updateData.order = parseInt(body.order);
+      }
+
+      // ✅ 아이콘 처리
       if (file) {
         updateData.icon = `/uploads/facilities/${file.filename}`;
-      } else if (body.icon && !body.icon.startsWith('/uploads')) {
+      } else if (body.icon !== undefined && !body.icon.startsWith('/uploads')) {
         updateData.icon = body.icon;
       }
 
+      // ✅ isActive 처리
       if (body.isActive !== undefined) {
         updateData.isActive = body.isActive === 'true' || body.isActive === true;
       }

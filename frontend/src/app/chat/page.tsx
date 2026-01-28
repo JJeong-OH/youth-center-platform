@@ -73,7 +73,6 @@ export default function ChatPage() {
         throw new Error('로그인이 필요합니다.');
       }
 
-      // ✅ 동적 API URL 설정
       const API_URL = typeof window !== 'undefined' && window.location.hostname === 'localhost'
         ? 'http://localhost:3001'
         : 'https://youth-center-platform.onrender.com';
@@ -119,116 +118,76 @@ export default function ChatPage() {
     }
   };
 
-  const formatTime = (date: Date) => {
-    return date.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
-  };
-
   return (
-    <div className="chat-page-container">
+    <div style={{
+      height: '100vh',
+      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      display: 'flex',
+      flexDirection: 'column',
+      overflow: 'hidden'
+    }}>
       {/* 헤더 */}
       <div style={{
-        backgroundColor: '#f9f9f9',
-        padding: '12px 16px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        borderBottom: '1px solid #ddd'
+        backgroundColor: '#667eea',
+        color: 'white',
+        padding: '16px 20px',
+        boxShadow: '0 2px 10px rgba(0,0,0,0.2)',
+        flexShrink: 0
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <button
-            onClick={() => window.location.href = '/'}
-            style={{
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              padding: '4px',
-              display: 'flex',
-              alignItems: 'center',
-              fontSize: '24px'
-            }}
-          >
-            ←
-          </button>
-          <div>
-            <div style={{ fontWeight: 'bold', fontSize: '16px' }}>AI 상담사 미추</div>
-            <div style={{ fontSize: '12px', color: '#999' }}>미추홀구청소년센터</div>
-          </div>
-        </div>
-        <button
-          style={{
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            padding: '4px',
-            fontSize: '24px',
-            color: '#666'
-          }}
-        >
-          ☰
-        </button>
+        <h1 style={{ fontSize: '18px', fontWeight: '700', margin: 0 }}>
+          💬 AI 상담사 미추
+        </h1>
       </div>
 
       {/* 채팅 영역 */}
       <div style={{
         flex: 1,
         overflowY: 'auto',
+        overflowX: 'hidden',
         padding: '16px',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '12px',
-        backgroundColor: '#b2c7d9'
+        paddingBottom: '16px'
       }}>
         {messages.map((message) => (
           <div
             key={message.id}
             style={{
               display: 'flex',
-              flexDirection: message.isUser ? 'row-reverse' : 'row',
-              alignItems: 'flex-end',
-              gap: '6px'
+              justifyContent: message.isUser ? 'flex-end' : 'flex-start',
+              marginBottom: '12px'
             }}
           >
-            <div
-              style={{
-                maxWidth: '70%',
-                padding: '10px 14px',
-                borderRadius: '18px',
-                backgroundColor: message.isUser ? '#fee500' : '#fff',
-                color: '#000',
-                fontSize: '15px',
-                lineHeight: '1.4',
-                wordBreak: 'break-word',
-                boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
-              }}
-            >
-              {message.text}
-            </div>
             <div style={{
-              fontSize: '11px',
-              color: '#666',
-              whiteSpace: 'nowrap'
+              maxWidth: message.isUser ? '240px' : '280px',
+              padding: '12px 16px',
+              borderRadius: message.isUser ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
+              backgroundColor: message.isUser ? '#667eea' : 'white',
+              color: message.isUser ? 'white' : '#333',
+              fontSize: '14px',
+              lineHeight: '1.5',
+              whiteSpace: 'pre-wrap',
+              wordBreak: 'break-word',
+              overflowWrap: 'break-word',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
             }}>
-              {formatTime(message.timestamp)}
+              {message.text}
             </div>
           </div>
         ))}
         
-        {/* 로딩 표시 */}
         {isLoading && (
           <div style={{
             display: 'flex',
-            alignItems: 'flex-end',
-            gap: '6px'
+            justifyContent: 'flex-start',
+            marginBottom: '12px'
           }}>
             <div style={{
-              padding: '10px 14px',
-              borderRadius: '18px',
-              backgroundColor: '#fff',
-              color: '#999',
-              fontSize: '15px',
-              boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
+              padding: '12px 16px',
+              borderRadius: '18px 18px 18px 4px',
+              backgroundColor: 'white',
+              fontSize: '14px',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
             }}>
-              답변을 작성중입니다...
+              ...
             </div>
           </div>
         )}
@@ -236,52 +195,65 @@ export default function ChatPage() {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* 입력 영역 */}
+      {/* 입력창 */}
       <div style={{
-        backgroundColor: '#fff',
+        backgroundColor: 'white',
         padding: '12px 16px',
-        display: 'flex',
-        gap: '8px',
-        alignItems: 'center',
-        borderTop: '1px solid #ddd'
+        boxShadow: '0 -2px 10px rgba(0,0,0,0.1)',
+        flexShrink: 0
       }}>
-        <input
-          type="text"
-          value={inputText}
-          onChange={(e) => setInputText(e.target.value)}
-          onKeyPress={(e) => e.key === 'Enter' && !isLoading && handleSend()}
-          placeholder="메시지를 입력하세요"
-          disabled={isLoading}
-          style={{
-            flex: 1,
-            padding: '10px 14px',
-            borderRadius: '20px',
-            border: '1px solid #ddd',
-            fontSize: '15px',
-            outline: 'none',
-            opacity: isLoading ? 0.6 : 1
-          }}
-        />
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+          <input
+            type="text"
+            value={inputText}
+            onChange={(e) => setInputText(e.target.value)}
+            onKeyPress={(e) => e.key === 'Enter' && !isLoading && handleSend()}
+            placeholder="메시지 입력..."
+            disabled={isLoading}
+            style={{
+              flex: 1,
+              padding: '12px 16px',
+              border: '2px solid #e5e7eb',
+              borderRadius: '24px',
+              fontSize: '14px',
+              outline: 'none'
+            }}
+          />
+          <button
+            onClick={handleSend}
+            disabled={isLoading || !inputText.trim()}
+            style={{
+              padding: '12px 20px',
+              backgroundColor: isLoading || !inputText.trim() ? '#e5e7eb' : '#667eea',
+              color: 'white',
+              border: 'none',
+              borderRadius: '24px',
+              fontSize: '14px',
+              fontWeight: '600',
+              cursor: isLoading || !inputText.trim() ? 'not-allowed' : 'pointer',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            전송
+          </button>
+        </div>
         <button
-          onClick={handleSend}
-          disabled={isLoading || !inputText.trim()}
+          onClick={() => window.location.href = '/'}
           style={{
-            backgroundColor: isLoading || !inputText.trim() ? '#ccc' : '#fee500',
+            display: 'block',
+            width: '100%',
+            textAlign: 'center',
+            padding: '8px',
+            color: '#667eea',
+            textDecoration: 'none',
+            fontSize: '13px',
+            fontWeight: '600',
+            background: 'none',
             border: 'none',
-            borderRadius: '50%',
-            width: '40px',
-            height: '40px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: isLoading || !inputText.trim() ? 'not-allowed' : 'pointer',
-            transition: 'opacity 0.2s',
-            fontSize: '20px'
+            cursor: 'pointer'
           }}
-          onMouseEnter={(e) => !isLoading && inputText.trim() && (e.currentTarget.style.opacity = '0.8')}
-          onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
         >
-          ➤
+          ← 홈으로
         </button>
       </div>
     </div>

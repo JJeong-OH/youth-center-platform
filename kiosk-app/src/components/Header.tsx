@@ -11,7 +11,7 @@ export const Header: React.FC<HeaderProps> = ({ onBack }) => {
       <div className="flex items-center gap-3">
         <LogoIcon className="w-10 h-10 text-indigo-600" />
         <h1 className="text-2xl font-bold tracking-tight bg-gradient-to-r from-slate-900 via-purple-800 to-slate-900 text-transparent bg-clip-text">
-          청소년 AI 키오스크
+          미추홀구청소년센터
         </h1>
       </div>
       <button

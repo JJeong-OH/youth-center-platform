@@ -21,7 +21,6 @@ function SurveyTestContent() {
   const totalQuestions = categories.reduce((sum, cat) => sum + questions[cat].length, 0);
   const answeredQuestions = Object.values(answers).flat().length;
 
-  // 답변 저장
   const handleAnswer = (score: number) => {
     const newAnswers = { ...answers };
     if (!newAnswers[currentCategoryName]) {
@@ -30,20 +29,16 @@ function SurveyTestContent() {
     newAnswers[currentCategoryName][currentQuestion] = score;
     setAnswers(newAnswers);
 
-    // 다음 문항으로
     if (currentQuestion < currentQuestions.length - 1) {
       setCurrentQuestion(currentQuestion + 1);
     } else if (currentCategory < categories.length - 1) {
-      // 다음 카테고리로
       setCurrentCategory(currentCategory + 1);
       setCurrentQuestion(0);
     } else {
-      // 설문 완료
       submitSurvey(newAnswers);
     }
   };
 
-  // 설문 제출
   const submitSurvey = async (finalAnswers: any) => {
     setIsSubmitting(true);
     try {
@@ -76,7 +71,6 @@ function SurveyTestContent() {
     }
   };
 
-  // 이전 문항
   const handlePrevious = () => {
     if (currentQuestion > 0) {
       setCurrentQuestion(currentQuestion - 1);
@@ -88,34 +82,48 @@ function SurveyTestContent() {
 
   if (isSubmitting) {
     return (
-      <div className="container" style={{ 
-        display: 'flex', 
-        alignItems: 'center', 
+      <div style={{
+        height: '100vh',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        display: 'flex',
+        alignItems: 'center',
         justifyContent: 'center',
-        minHeight: '100vh'
+        color: 'white'
       }}>
         <div style={{ textAlign: 'center' }}>
           <h2 style={{ fontSize: '24px', marginBottom: '16px' }}>제출 중...</h2>
-          <p style={{ color: '#666' }}>잠시만 기다려주세요.</p>
+          <p style={{ color: 'rgba(255,255,255,0.8)' }}>잠시만 기다려주세요.</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="container">
+    <div style={{
+      height: '100vh',
+      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      display: 'flex',
+      flexDirection: 'column',
+      overflow: 'hidden'
+    }}>
       {/* 헤더 */}
-      <div style={{ padding: '20px 0', borderBottom: '2px solid #eee' }}>
+      <div style={{
+        backgroundColor: '#667eea',
+        color: 'white',
+        padding: '16px 20px',
+        boxShadow: '0 2px 10px rgba(0,0,0,0.2)',
+        flexShrink: 0
+      }}>
         <div style={{ 
           display: 'flex', 
           justifyContent: 'space-between', 
           alignItems: 'center',
-          marginBottom: '16px'
+          marginBottom: '12px'
         }}>
-          <h1 style={{ fontSize: '20px', fontWeight: 'bold', margin: 0 }}>
+          <h1 style={{ fontSize: '16px', fontWeight: '700', margin: 0 }}>
             {testType}
           </h1>
-          <span style={{ fontSize: '14px', color: '#666' }}>
+          <span style={{ fontSize: '13px' }}>
             {answeredQuestions} / {totalQuestions}
           </span>
         </div>
@@ -123,57 +131,70 @@ function SurveyTestContent() {
         {/* 프로그레스 바 */}
         <div style={{ 
           width: '100%', 
-          height: '8px', 
-          backgroundColor: '#eee', 
-          borderRadius: '4px',
+          height: '6px', 
+          backgroundColor: 'rgba(255,255,255,0.3)', 
+          borderRadius: '3px',
           overflow: 'hidden'
         }}>
           <div style={{ 
             width: `${(answeredQuestions / totalQuestions) * 100}%`,
             height: '100%',
-            backgroundColor: '#5887FF',
+            backgroundColor: 'white',
             transition: 'width 0.3s'
           }} />
         </div>
       </div>
 
-      {/* 카테고리 표시 */}
-      <div style={{ 
-        padding: '24px 0',
-        textAlign: 'center',
-        borderBottom: '1px solid #eee'
+      {/* 컨텐츠 */}
+      <div style={{
+        flex: 1,
+        overflowY: 'auto',
+        overflowX: 'hidden',
+        padding: '20px'
       }}>
+        {/* 카테고리 표시 */}
         <div style={{ 
-          display: 'inline-block',
-          padding: '8px 16px',
-          backgroundColor: '#e8f0ff',
-          borderRadius: '20px',
-          fontSize: '14px',
-          fontWeight: '600',
-          color: '#5887FF',
-          marginBottom: '8px'
+          textAlign: 'center',
+          marginBottom: '24px'
         }}>
-          {currentCategoryName}
+          <div style={{ 
+            display: 'inline-block',
+            padding: '8px 16px',
+            backgroundColor: 'rgba(255,255,255,0.95)',
+            borderRadius: '20px',
+            fontSize: '13px',
+            fontWeight: '600',
+            color: '#667eea',
+            marginBottom: '8px'
+          }}>
+            {currentCategoryName}
+          </div>
+          <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.8)', margin: '8px 0 0 0' }}>
+            {currentQuestion + 1} / {currentQuestions.length}
+          </p>
         </div>
-        <p style={{ fontSize: '13px', color: '#999', margin: '8px 0 0 0' }}>
-          {currentQuestion + 1} / {currentQuestions.length}
-        </p>
-      </div>
 
-      {/* 질문 */}
-      <div style={{ padding: '32px 0' }}>
-        <h2 style={{ 
-          fontSize: '20px', 
-          fontWeight: '600',
-          lineHeight: '1.6',
-          marginBottom: '32px',
-          minHeight: '80px'
+        {/* 질문 */}
+        <div style={{
+          backgroundColor: 'rgba(255,255,255,0.95)',
+          borderRadius: '16px',
+          padding: '24px',
+          marginBottom: '20px'
         }}>
-          {currentQuestions[currentQuestion]}
-        </h2>
+          <h2 style={{ 
+            fontSize: '17px', 
+            fontWeight: '600',
+            lineHeight: '1.6',
+            margin: 0,
+            color: '#333',
+            wordBreak: 'keep-all'
+          }}>
+            {currentQuestions[currentQuestion]}
+          </h2>
+        </div>
 
-        {/* 답변 버튼 (5점 척도) */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        {/* 답변 버튼 */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '16px' }}>
           {[
             { score: 5, label: '매우 그렇다', color: '#4caf50' },
             { score: 4, label: '그렇다', color: '#8bc34a' },
@@ -187,42 +208,33 @@ function SurveyTestContent() {
                 key={score}
                 onClick={() => handleAnswer(score)}
                 style={{
-                  padding: '20px',
-                  border: isSelected ? `3px solid ${color}` : '2px solid #ddd',
+                  padding: '16px',
+                  border: 'none',
                   borderRadius: '12px',
-                  backgroundColor: isSelected ? `${color}10` : 'white',
+                  backgroundColor: isSelected ? color : 'rgba(255,255,255,0.95)',
+                  color: isSelected ? 'white' : '#333',
                   cursor: 'pointer',
-                  fontSize: '16px',
-                  fontWeight: isSelected ? 'bold' : '500',
+                  fontSize: '15px',
+                  fontWeight: isSelected ? '700' : '500',
                   transition: 'all 0.2s',
                   display: 'flex',
                   justifyContent: 'space-between',
-                  alignItems: 'center'
-                }}
-                onMouseEnter={(e) => {
-                  if (!isSelected) {
-                    e.currentTarget.style.borderColor = color;
-                    e.currentTarget.style.backgroundColor = `${color}05`;
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!isSelected) {
-                    e.currentTarget.style.borderColor = '#ddd';
-                    e.currentTarget.style.backgroundColor = 'white';
-                  }
+                  alignItems: 'center',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
                 }}
               >
                 <span>{label}</span>
                 <span style={{ 
-                  width: '32px',
-                  height: '32px',
+                  width: '28px',
+                  height: '28px',
                   borderRadius: '50%',
-                  backgroundColor: color,
+                  backgroundColor: isSelected ? 'rgba(255,255,255,0.3)' : color,
                   color: 'white',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontWeight: 'bold'
+                  fontWeight: '700',
+                  fontSize: '14px'
                 }}>
                   {score}
                 </span>
@@ -230,36 +242,46 @@ function SurveyTestContent() {
             );
           })}
         </div>
-      </div>
 
-      {/* 이전 버튼 */}
-      {(currentCategory > 0 || currentQuestion > 0) && (
-        <div style={{ paddingBottom: '24px' }}>
+        {/* 이전 버튼 */}
+        {(currentCategory > 0 || currentQuestion > 0) && (
           <button
             onClick={handlePrevious}
             style={{
               width: '100%',
-              padding: '16px',
-              border: '2px solid #ddd',
+              padding: '14px',
+              border: 'none',
               borderRadius: '12px',
-              backgroundColor: 'white',
+              backgroundColor: 'rgba(255,255,255,0.95)',
               cursor: 'pointer',
-              fontSize: '16px',
+              fontSize: '15px',
               fontWeight: '600',
-              color: '#666'
+              color: '#666',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
             }}
           >
             ← 이전 문항
           </button>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
 
 export default function SurveyTestPage() {
   return (
-    <Suspense fallback={<div>로딩중...</div>}>
+    <Suspense fallback={
+      <div style={{
+        height: '100vh',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: 'white'
+      }}>
+        로딩중...
+      </div>
+    }>
       <SurveyTestContent />
     </Suspense>
   );

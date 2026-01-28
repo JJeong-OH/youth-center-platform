@@ -1,4 +1,13 @@
-import { IsDateString, IsEmail, IsIn, IsNotEmpty, IsOptional, IsString, MinLength } from 'class-validator';
+import { 
+  IsDateString, 
+  IsEmail, 
+  IsIn, 
+  IsNotEmpty, 
+  IsOptional, 
+  IsString, 
+  MinLength,
+  Matches 
+} from 'class-validator';
 
 export class CreateUserDto {
   @IsNotEmpty()
@@ -16,14 +25,15 @@ export class CreateUserDto {
   name: string;
 
   @IsOptional()
+  @IsString()
+  @Matches(/^\d{10,11}$/, { message: '전화번호는 10-11자리 숫자여야 합니다.' })
+  phoneNumber?: string;
+
+  @IsOptional()
   @IsDateString()
   dob?: string;
 
   @IsOptional()
-  @IsString()
-  phoneNumber?: string;
-
-  @IsOptional()
-  @IsIn(['male', 'female'])
-  gender?: string; // <-- 성별 필드 추가됨
+  @IsIn(['male', 'female', 'other'])
+  gender?: string;
 }

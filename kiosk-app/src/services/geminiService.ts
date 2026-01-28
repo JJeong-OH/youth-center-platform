@@ -2,22 +2,19 @@ import { GoogleGenAI, Type, Chat } from '@google/genai';
 import type { FunctionDeclaration } from '@google/genai';
 import type { Program } from '../types/types';
 
-// ✅ 환경변수 로드
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 
-// ✅ 디버깅 로그 (나중에 삭제 가능)
 console.log('🔍 Environment check:', {
   hasApiKey: !!API_KEY,
   apiKeyPrefix: API_KEY ? API_KEY.slice(0, 10) + '...' : 'undefined',
   allEnvVars: import.meta.env
 });
 
-// ✅ 에러 대신 경고만 (앱이 죽지 않음)
+
 if (!API_KEY) {
-  console.warn("⚠️ GEMINI API 키가 설정되지 않았습니다. AI 추천 기능이 작동하지 않습니다.");
+  console.warn("GEMINI API 키가 설정되지 않았습니다. AI 추천 기능이 작동하지 않습니다.");
 }
 
-// ✅ API 키가 없어도 null로 초기화
 const ai = API_KEY ? new GoogleGenAI({ apiKey: API_KEY }) : null;
 
 const bookFacilityFunctionDeclaration: FunctionDeclaration = {
@@ -134,17 +131,17 @@ ${programsList}
 **추천 형식 (필수!):**
 "너한테 딱 맞는 프로그램 찾았어! ✨
 
-1. **[프로그램 제목]** (ID: [숫자])
+1. [프로그램 제목]
    [왜 좋은지 청소년 눈높이로 설명]
 
-2. **[프로그램 제목]** (ID: [숫자])
+2. [프로그램 제목]
    [왜 좋은지 청소년 눈높이로 설명]
 
 오른쪽에서 신청하기 눌러봐~ 👉"
 
 **필수 규칙:**
 - ID는 정확한 숫자로 표기 (예: ID: 1)
-- 최소 2개, 최대 3개 추천
+- 최소 1개, 최대 3개 추천
 - 청소년 눈높이의 친근한 말투
 - 프로그램 목록에 없는 건 추천 금지`;
 
@@ -168,10 +165,9 @@ const handleGeminiError = (error: unknown) => {
 };
 
 export const sendMessageToCounselor = async (message: string) => {
-  // ✅ API 키 없으면 친절한 에러 메시지만 반환
   if (!ai) {
     return {
-      text: "⚠️ AI 상담 기능을 사용하려면 관리자에게 문의해주세요. (API 키 미설정)",
+      text: "AI 상담 기능을 사용하려면 관리자에게 문의해주세요.",
       functionCalls: [],
     };
   }
@@ -195,10 +191,9 @@ export const sendMessageToRecommender = async (
   message: string,
   programs: Program[] = []
 ) => {
-  // ✅ API 키 없으면 친절한 에러 메시지만 반환
   if (!ai) {
     return {
-      text: "⚠️ AI 추천 기능을 사용하려면 관리자에게 문의해주세요. (API 키 미설정)",
+      text: "추천 기능을 사용하려면 관리자에게 문의해주세요.",
       functionCalls: [],
     };
   }

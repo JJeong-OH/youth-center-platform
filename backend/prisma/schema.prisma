@@ -12,8 +12,12 @@ model User {
   name             String
   email            String    @unique
   password_hash    String
+  phone_number     String?   @map("phone_number")  // ✅ 추가!
+  dob              DateTime? @map("date_of_birth") // ✅ 추가!
+  gender           String?                          // ✅ 추가!
   role             String    @default("USER")
   created_at       DateTime  @default(now())
+  updated_at       DateTime  @updatedAt            // ✅ 추가!
   
   profiles         Profile[]
   test_results     TestResult[]
@@ -108,12 +112,14 @@ model Facility {
   icon        String    @default("🏢")
   description String?
   capacity    Int?
-  floor       String?   // ✅ 추가: 지하1층, 3층, 4층
+  floor       String?
   isActive    Boolean   @default(true)
   order       Int       @default(0)
   createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  updatedAt   DateTime  @default(now()) @updatedAt  
   bookings    Booking[]
+  
+  @@map("facilities")
 }
 
 model Booking {

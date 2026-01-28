@@ -3,9 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { UsersIcon, CheckCircleIcon, XCircleIcon, CalendarIcon, TicketIcon, LoadingIcon, UserIcon, PhoneIcon } from './Icons';
 import { BackButton } from './BackButton';  
 
-const API_URL = typeof window !== 'undefined' && window.location.hostname === 'localhost'
-  ? 'http://localhost:3001'
-  : 'https://youth-center-platform.onrender.com';
+const API_URL = 'http://localhost:3001';
 
 type Facility = {
   id: string;
@@ -103,15 +101,34 @@ const BookingModal: React.FC<{
         </div>
         <div className="space-y-4">
           <div>
-            <input type="text" placeholder="이름 (한글 2자 이상)" value={userName} onChange={e => setUserName(e.target.value)} className={`w-full input-field ${errors.userName ? 'border-red-500' : 'border-slate-300'}`} />
+            <input 
+              type="text" 
+              placeholder="이름 (한글 2자 이상)" 
+              value={userName} 
+              onChange={e => setUserName(e.target.value)} 
+              className={`w-full input-field ${errors.userName ? 'border-red-500' : 'border-slate-300'}`} 
+            />
             {errors.userName && <p className="text-red-600 text-sm mt-1">{errors.userName}</p>}
           </div>
           <div>
-            <input type="tel" placeholder="전화번호 ('-' 제외)" value={phoneNumber} onChange={e => setPhoneNumber(e.target.value)} className={`w-full input-field ${errors.phoneNumber ? 'border-red-500' : 'border-slate-300'}`} />
+            <input 
+              type="tel" 
+              placeholder="전화번호 ('-' 제외)" 
+              value={phoneNumber} 
+              onChange={e => setPhoneNumber(e.target.value)} 
+              className={`w-full input-field ${errors.phoneNumber ? 'border-red-500' : 'border-slate-300'}`} 
+            />
             {errors.phoneNumber && <p className="text-red-600 text-sm mt-1">{errors.phoneNumber}</p>}
           </div>
           <div>
-            <input type="password" placeholder="비밀번호 4자리" maxLength={4} value={pin} onChange={e => setPin(e.target.value)} className={`w-full input-field ${errors.pin ? 'border-red-500' : 'border-slate-300'}`} />
+            <input 
+              type="password" 
+              placeholder="비밀번호 4자리" 
+              maxLength={4} 
+              value={pin} 
+              onChange={e => setPin(e.target.value)} 
+              className={`w-full input-field ${errors.pin ? 'border-red-500' : 'border-slate-300'}`} 
+            />
             {errors.pin && <p className="text-red-600 text-sm mt-1">{errors.pin}</p>}
           </div>
         </div>
@@ -174,8 +191,6 @@ const FacilityCard: React.FC<{
 }> = ({ facility, bookings, selectedDate, onBook }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [selectedTimeSlots, setSelectedTimeSlots] = useState<string[]>([]);
-  const [existingBookingsCount, setExistingBookingsCount] = useState(0);
-  const [phoneNumber, setPhoneNumber] = useState('');
   
   const bookingsForDate = bookings.filter(b => 
     b.facility_id === facility.id && 
@@ -187,27 +202,9 @@ const FacilityCard: React.FC<{
     bookingsForDate.map(b => b.time_slot)
   );
   
-  const checkExistingBookings = async (phone: string) => {
-    if (phone.length >= 10) {
-      try {
-        const response = await fetch(
-          `${API_URL}/api/kiosk/bookings/check?facilityId=${facility.id}&date=${selectedDate}&phone=${phone}`
-        );
-        const data = await response.json();
-        if (data.success) {
-          setExistingBookingsCount(data.count || 0);
-        }
-      } catch (error) {
-        console.error('예약 개수 확인 실패:', error);
-      }
-    }
-  };
-  
   useEffect(() => {
     if (!isExpanded) {
       setSelectedTimeSlots([]);
-      setExistingBookingsCount(0);
-      setPhoneNumber('');
     }
   }, [isExpanded]);
   
@@ -216,9 +213,8 @@ const FacilityCard: React.FC<{
       if (prev.includes(timeSlot)) {
         return prev.filter(t => t !== timeSlot);
       } else {
-        const maxSelectable = 2 - existingBookingsCount;
-        if (prev.length >= maxSelectable) {
-          alert(`같은 날, 같은 실습실은 최대 2시간까지만 예약 가능합니다.\n현재 ${existingBookingsCount}개 예약됨`);
+        if (prev.length >= 2) {
+          alert('같은 날, 같은 실습실은 최대 2시간까지만 예약 가능합니다.');
           return prev;
         }
         return [...prev, timeSlot];
@@ -230,8 +226,6 @@ const FacilityCard: React.FC<{
     if (selectedTimeSlots.length > 0) {
       onBook(facility, selectedTimeSlots);
       setSelectedTimeSlots([]);
-      setExistingBookingsCount(0);
-      setPhoneNumber('');
       setIsExpanded(false);
     }
   };
@@ -263,7 +257,7 @@ const FacilityCard: React.FC<{
             <UsersIcon className="w-3 h-3" />
             <span>최대 {facility.capacity}명</span>
           </div>
-          <p className="text-slate-600 text-xs line-clamp-2 mt-1">{facility.description}</p>
+          <p className="text-slate-600 text-xs line-clamp-4 mt-1">{facility.description}</p>
           {!isPast && (
             <button
               onClick={() => setIsExpanded(!isExpanded)}
@@ -276,30 +270,8 @@ const FacilityCard: React.FC<{
       </div>
       {isExpanded && (
         <div className="mt-4 pt-4 border-t border-slate-200/80">
-          <div className="mb-3">
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
-              전화번호 입력
-            </label>
-            <input
-              type="tel"
-              value={phoneNumber}
-              onChange={(e) => {
-                setPhoneNumber(e.target.value);
-                checkExistingBookings(e.target.value.replace(/-/g, ''));
-              }}
-              placeholder="전화번호 ('-' 제외)"
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white"
-            />
-          </div>
-
-          {existingBookingsCount > 0 && (
-            <div className="mb-3 p-2 bg-yellow-100 border border-yellow-300 rounded-lg text-xs text-yellow-800">
-              ⚠️ 오늘 {existingBookingsCount}시간 예약됨. 최대 {2 - existingBookingsCount}시간 추가 가능
-            </div>
-          )}
-
           <h4 className="font-semibold mb-2 text-slate-700 text-sm">
-            시간 선택 (최대 {2 - existingBookingsCount}개)
+            시간 선택 (최대 2개)
             {selectedTimeSlots.length > 0 && (
               <span className="text-indigo-600 ml-2">({selectedTimeSlots.length}개)</span>
             )}
@@ -308,8 +280,7 @@ const FacilityCard: React.FC<{
             {TIME_SLOTS.map(timeSlot => {
               const isBooked = bookedTimeSlots.has(timeSlot);
               const isSelected = selectedTimeSlots.includes(timeSlot);
-              const maxSelectable = 2 - existingBookingsCount;
-              const isDisabled = !isSelected && selectedTimeSlots.length >= maxSelectable;
+              const isDisabled = !isSelected && selectedTimeSlots.length >= 2;
               
               if (isBooked) {
                 return (
@@ -442,7 +413,6 @@ const NewReservationView: React.FC<{
 
     return (  
         <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
-            {/* 날짜 선택 - 고정 */}
             <div className="bg-white/70 backdrop-blur-xl rounded-xl shadow-lg border border-white/30 p-3 mb-3" style={{ flexShrink: 0 }}>
                 <label htmlFor="date-picker" className="flex items-center gap-2 text-base font-bold text-slate-700 mb-2">
                     <CalendarIcon className="w-5 h-5 text-indigo-500"/>
@@ -458,7 +428,6 @@ const NewReservationView: React.FC<{
                 />
             </div>
 
-            {/* 에러 메시지 */}
             {errorMessage && (
               <div className="bg-red-100 border border-red-300 text-red-800 px-3 py-2 rounded-xl mb-3 flex items-center gap-2 text-sm" style={{ flexShrink: 0 }}>
                 <XCircleIcon className="w-4 h-4 flex-shrink-0" />
@@ -466,7 +435,6 @@ const NewReservationView: React.FC<{
               </div>
             )}
 
-            {/* 시설 목록 - 스크롤 영역 */}
             <div style={{ flex: 1, overflowY: 'auto', paddingRight: '4px', paddingBottom: '100px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                     {sortedFloors.map(floor => (
@@ -503,7 +471,6 @@ const NewReservationView: React.FC<{
                 </div>
             </div>
 
-            {/* 모달들 */}
             {bookingSlot && (
                 <BookingModal
                     slot={{ ...bookingSlot, date: selectedDate }}
@@ -730,7 +697,6 @@ export const FacilityReservation: React.FC<{
             .btn-secondary:disabled { background-color: #e5e7eb; cursor: not-allowed; }
         `}</style>
         
-      {/* 헤더 - 고정 */}
       <div className="flex items-center justify-between mb-3 px-2" style={{ flexShrink: 0 }}>
         <h2 className="text-xl md:text-2xl font-bold text-indigo-600">시설 예약</h2>
         <div className="flex items-center p-1 rounded-xl bg-white/70 border border-white/30 shadow-sm">
@@ -749,7 +715,6 @@ export const FacilityReservation: React.FC<{
         </div>
       </div>
 
-      {/* 알림 */}
       {notification && (
         <div className={`px-3 py-2 rounded-xl mb-3 flex items-center gap-2 text-sm ${notification.type === 'success' ? 'bg-green-100 border border-green-300 text-green-800' : 'bg-red-100 border border-red-300 text-red-800'}`} style={{ flexShrink: 0 }}>
           {notification.type === 'success' ? <CheckCircleIcon className="w-4 h-4"/> : <XCircleIcon className="w-4 h-4"/>}
@@ -757,12 +722,10 @@ export const FacilityReservation: React.FC<{
         </div>
       )}
       
-      {/* 콘텐츠 영역 */}
       <div style={{ flex: 1, overflow: 'hidden' }}>
         {renderView()}
       </div>
 
-      {/* 뒤로가기 버튼 */}
       {onBack && <BackButton onClick={onBack} label="← 메인으로 돌아가기" />}
     </div>
   );

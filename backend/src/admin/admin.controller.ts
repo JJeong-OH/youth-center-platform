@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Body, Param, Query, UseGuards } from '@nestjs/common';
+import { Controller, Post, Get, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { AdminGuard } from './admin.guard';
 
@@ -19,9 +19,8 @@ export class AdminController {
     }
   }
 
-  // ✅ 대시보드 통계 (인증 제거)
+  // ✅ 대시보드 통계
   @Get('dashboard')
-  // @UseGuards(AdminGuard)  // 🔴 주석 처리
   async getDashboard() {
     try {
       return await this.adminService.getDashboardStats();
@@ -33,9 +32,8 @@ export class AdminController {
     }
   }
 
-  // ✅ 전체 회원 목록 (인증 제거)
+  // ✅ 전체 회원 목록
   @Get('users')
-  // @UseGuards(AdminGuard)  // 🔴 주석 처리
   async getUsers(
     @Query('page') page: string = '1',
     @Query('limit') limit: string = '20',
@@ -53,9 +51,8 @@ export class AdminController {
     }
   }
 
-  // ✅ 회원 상세 (인증 제거)
+  // ✅ 회원 상세
   @Get('users/:id')
-  // @UseGuards(AdminGuard)  // 🔴 주석 처리
   async getUserDetail(@Param('id') id: string) {
     try {
       return await this.adminService.getUserDetail(parseInt(id));
@@ -67,9 +64,21 @@ export class AdminController {
     }
   }
 
-  // ✅ 설문 통계 (인증 제거)
+  // ✅ 회원 삭제 API 추가
+  @Delete('users/:id')
+  async deleteUser(@Param('id') id: string) {
+    try {
+      return await this.adminService.deleteUser(parseInt(id));
+    } catch (error) {
+      return {
+        success: false,
+        message: error.message,
+      };
+    }
+  }
+
+  // ✅ 설문 통계
   @Get('surveys/stats')
-  // @UseGuards(AdminGuard)  // 🔴 주석 처리
   async getSurveyStats() {
     try {
       return await this.adminService.getSurveyStats();
@@ -81,9 +90,8 @@ export class AdminController {
     }
   }
 
-  // ✅ 통합 사용자 통계 (인증 제거)
+  // ✅ 통합 사용자 통계
   @Get('integrated-users')
-  // @UseGuards(AdminGuard)  // 🔴 주석 처리
   async getIntegratedUsers() {
     try {
       return await this.adminService.getIntegratedUserStats();
@@ -95,9 +103,8 @@ export class AdminController {
     }
   }
 
-  // ✅ 사용자 상세 조회 (인증 제거)
+  // ✅ 사용자 상세 조회
   @Get('user-detail/:phone')
-  // @UseGuards(AdminGuard)  // 🔴 주석 처리
   async getUserDetailByPhone(@Param('phone') phone: string) {
     try {
       return await this.adminService.getUserDetailByPhone(phone);

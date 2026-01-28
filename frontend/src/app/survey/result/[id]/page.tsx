@@ -19,7 +19,7 @@ export default function SurveyResultPage() {
   const fetchResult = async () => {
     try {
       const token = localStorage.getItem('accessToken');
-      const response = await fetch(`http://localhost:3000/survey/r  esult/${resultId}`, {
+      const response = await fetch(`http://localhost:3000/survey/result/${resultId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -43,226 +43,289 @@ export default function SurveyResultPage() {
 
   if (loading) {
     return (
-      <div className="container" style={{ 
-        display: 'flex', 
-        alignItems: 'center', 
+      <div style={{
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        display: 'flex',
+        alignItems: 'center',
         justifyContent: 'center',
-        minHeight: '100vh'
+        color: 'white'
       }}>
-        <p>결과를 불러오는 중...</p>
+        결과를 불러오는 중...
       </div>
     );
   }
 
   if (!result) {
     return (
-      <div className="container">
-        <p>결과를 찾을 수 없습니다.</p>
+      <div style={{
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: 'white'
+      }}>
+        결과를 찾을 수 없습니다.
       </div>
     );
   }
 
-  // 육각형 그래프 데이터 변환
   const chartData = Object.entries(result.scores).map(([category, score]) => ({
     category: category,
     score: Number(score),
     fullMark: 5
   }));
 
-  // 상위 3개 역량
   const topScores = Object.entries(result.scores)
     .sort(([, a]: any, [, b]: any) => b - a)
     .slice(0, 3);
 
   return (
-    <div className="container">
+    <div style={{
+      minHeight: '100vh',
+      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      display: 'flex',
+      flexDirection: 'column',
+      overflow: 'hidden'
+    }}>
       {/* 헤더 */}
-      <header style={{ padding: '24px 0', borderBottom: '2px solid #eee' }}>
+      <div style={{
+        backgroundColor: '#667eea',
+        color: 'white',
+        padding: '16px 20px',
+        boxShadow: '0 2px 10px rgba(0,0,0,0.2)',
+        flexShrink: 0
+      }}>
+        <h1 style={{ fontSize: '18px', fontWeight: '700', margin: '0 0 4px 0' }}>
+          {result.testType} 결과
+        </h1>
+        <p style={{ fontSize: '12px', opacity: 0.8, margin: 0 }}>
+          {new Date(result.createdAt).toLocaleDateString('ko-KR')}
+        </p>
+      </div>
+
+      {/* 컨텐츠 */}
+      <div style={{
+        flex: 1,
+        overflowY: 'auto',
+        padding: '20px'
+      }}>
+        {/* 육각형 그래프 */}
+        <div style={{
+          backgroundColor: 'rgba(255,255,255,0.95)',
+          borderRadius: '16px',
+          padding: '20px',
+          marginBottom: '16px'
+        }}>
+          <h2 style={{ fontSize: '17px', fontWeight: '700', marginBottom: '16px', textAlign: 'center', color: '#333' }}>
+            역량 분석
+          </h2>
+          
+          <div style={{ width: '100%', height: '350px' }}>
+            <ResponsiveContainer>
+              <RadarChart 
+                data={chartData}
+                margin={{ top: 20, right: 30, bottom: 20, left: 30 }}
+              >
+                <PolarGrid stroke="#ddd" />
+                <PolarAngleAxis 
+                  dataKey="category" 
+                  tick={{ 
+                    fontSize: 11, 
+                    fill: '#333',
+                    fontWeight: '600'
+                  }}
+                />
+                <PolarRadiusAxis 
+                  angle={90} 
+                  domain={[0, 5]} 
+                  tick={{ fontSize: 10 }} 
+                />
+                <Radar 
+                  name="점수" 
+                  dataKey="score" 
+                  stroke="#5887FF" 
+                  fill="#5887FF" 
+                  fillOpacity={0.6}
+                  strokeWidth={2}
+                />
+              </RadarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* 상위 역량 */}
+        <div style={{
+          backgroundColor: 'rgba(255,255,255,0.95)',
+          borderRadius: '16px',
+          padding: '20px',
+          marginBottom: '16px'
+        }}>
+          <h2 style={{ fontSize: '17px', fontWeight: '700', marginBottom: '12px', color: '#333' }}>
+            🏆 당신의 강점 역량
+          </h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {topScores.map(([category, score], index) => (
+              <div 
+                key={category}
+                style={{
+                  padding: '14px',
+                  backgroundColor: index === 0 ? '#fff9e6' : '#f9f9f9',
+                  borderRadius: '12px',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
+                }}
+              >
+                <div>
+                  <span style={{ 
+                    fontSize: '18px', 
+                    marginRight: '8px' 
+                  }}>
+                    {index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉'}
+                  </span>
+                  <span style={{ fontWeight: '600', fontSize: '15px', color: '#333' }}>
+                    {category}
+                  </span>
+                </div>
+                <span style={{ 
+                  fontSize: '20px', 
+                  fontWeight: '700',
+                  color: '#5887FF'
+                }}>
+                  {Number(score).toFixed(1)}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* AI 분석 */}
+        <div style={{
+          backgroundColor: 'rgba(255,255,255,0.95)',
+          borderRadius: '16px',
+          padding: '20px',
+          marginBottom: '16px'
+        }}>
+          <h2 style={{ fontSize: '17px', fontWeight: '700', marginBottom: '12px', color: '#333' }}>
+            💬 분석 결과
+          </h2>
+          <div style={{
+            padding: '16px',
+            backgroundColor: '#f0f7ff',
+            borderRadius: '12px',
+            lineHeight: '1.7',
+            color: '#333',
+            fontSize: '14px'
+          }}>
+            {result.analysis}
+          </div>
+        </div>
+
+        {/* 전체 점수 상세 */}
+        <div style={{
+          backgroundColor: 'rgba(255,255,255,0.95)',
+          borderRadius: '16px',
+          padding: '20px',
+          marginBottom: '16px'
+        }}>
+          <h2 style={{ fontSize: '17px', fontWeight: '700', marginBottom: '12px', color: '#333' }}>
+            📊 전체 점수
+          </h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {Object.entries(result.scores)
+              .sort(([, a], [, b]) => (Number(b) - Number(a)))
+              .map(([category, score]) => {
+                const scoreValue = Number(score);
+                return (
+                  <div 
+                    key={category}
+                    style={{
+                      padding: '12px',
+                      backgroundColor: '#f9f9f9',
+                      borderRadius: '10px',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center'
+                    }}
+                  >
+                    <span style={{ fontSize: '14px', color: '#333', fontWeight: '500' }}>{category}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <div style={{
+                        width: '80px',
+                        height: '6px',
+                        backgroundColor: '#e5e5e5',
+                        borderRadius: '3px',
+                        overflow: 'hidden'
+                      }}>
+                        <div style={{
+                          width: `${(scoreValue / 5) * 100}%`,
+                          height: '100%',
+                          backgroundColor: '#5887FF'
+                        }} />
+                      </div>
+                      <span style={{ 
+                        fontSize: '15px', 
+                        fontWeight: '700',
+                        minWidth: '35px',
+                        textAlign: 'right',
+                        color: '#5887FF'
+                      }}>
+                        {scoreValue.toFixed(1)}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+          </div>
+        </div>
+      </div>
+
+      {/* 하단 버튼 */}
+      <div style={{
+        backgroundColor: 'white',
+        padding: '12px 16px',
+        boxShadow: '0 -2px 10px rgba(0,0,0,0.1)',
+        flexShrink: 0,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '8px'
+      }}>
         <button
           onClick={() => router.push('/survey')}
           style={{
-            background: 'none',
+            width: '100%',
+            padding: '12px',
+            backgroundColor: '#667eea',
+            color: 'white',
             border: 'none',
-            fontSize: '20px',
-            cursor: 'pointer',
-            marginBottom: '12px'
+            borderRadius: '10px',
+            fontSize: '14px',
+            fontWeight: '600',
+            cursor: 'pointer'
           }}
-        >
-          ← 뒤로가기
-        </button>
-        <h1 style={{ fontSize: '24px', fontWeight: 'bold', margin: '8px 0' }}>
-          {result.testType} 결과
-        </h1>
-        <p style={{ fontSize: '14px', color: '#999', margin: 0 }}>
-          {new Date(result.createdAt).toLocaleDateString('ko-KR')}
-        </p>
-      </header>
-
-      {/* 육각형 그래프 */}
-      <div style={{ padding: '32px 0' }}>
-        <h2 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '24px', textAlign: 'center' }}>
-          역량 분석
-        </h2>
-        
-        <div style={{ width: '100%', height: '500px' }}>
-          <ResponsiveContainer>
-            <RadarChart 
-              data={chartData}
-              margin={{ top: 40, right: 60, bottom: 40, left: 60 }}
-            >
-              <PolarGrid stroke="#ddd" />
-              <PolarAngleAxis 
-                dataKey="category" 
-                tick={{ 
-                  fontSize: 13, 
-                  fill: '#333',
-                  fontWeight: '600'
-                }}
-              />
-              <PolarRadiusAxis 
-                angle={90} 
-                domain={[0, 5]} 
-                tick={{ fontSize: 12 }} 
-              />
-              <Radar 
-                name="점수" 
-                dataKey="score" 
-                stroke="#5887FF" 
-                fill="#5887FF" 
-                fillOpacity={0.6}
-                strokeWidth={2}
-              />
-            </RadarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      {/* 상위 역량 */}
-      <div style={{ padding: '24px 0', borderTop: '1px solid #eee' }}>
-        <h2 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '16px' }}>
-          🏆 당신의 강점 역량
-        </h2>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {topScores.map(([category, score], index) => (
-            <div 
-              key={category}
-              style={{
-                padding: '16px',
-                backgroundColor: index === 0 ? '#fff9e6' : '#f5f5f5',
-                borderRadius: '12px',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center'
-              }}
-            >
-              <div>
-                <span style={{ 
-                  fontSize: '20px', 
-                  marginRight: '8px' 
-                }}>
-                  {index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉'}
-                </span>
-                <span style={{ fontWeight: '600', fontSize: '16px' }}>
-                  {category}
-                </span>
-              </div>
-              <span style={{ 
-                fontSize: '24px', 
-                fontWeight: 'bold',
-                color: '#5887FF'
-              }}>
-                {score}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* AI 분석 */}
-      <div style={{ padding: '24px 0', borderTop: '1px solid #eee' }}>
-        <h2 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '16px' }}>
-          💬 분석 결과
-        </h2>
-        <div style={{
-          padding: '20px',
-          backgroundColor: '#f0f7ff',
-          borderRadius: '12px',
-          lineHeight: '1.8',
-          color: '#333'
-        }}>
-          {result.analysis}
-        </div>
-      </div>
-
-      {/* 전체 점수 상세 */}
-      <div style={{ padding: '24px 0', borderTop: '1px solid #eee' }}>
-        <h2 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '16px' }}>
-          📊 전체 점수
-        </h2>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {Object.entries(result.scores)
-            .sort(([, a], [, b]) => (Number(b) - Number(a)))
-            .map(([category, score]) => {
-              const scoreValue = Number(score);
-              return (
-                <div 
-                  key={category}
-                  style={{
-                    padding: '12px 16px',
-                    border: '1px solid #eee',
-                    borderRadius: '8px',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center'
-                  }}
-                >
-                  <span style={{ fontSize: '15px' }}>{category}</span>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{
-                      width: '100px',
-                      height: '8px',
-                      backgroundColor: '#eee',
-                      borderRadius: '4px',
-                      overflow: 'hidden'
-                    }}>
-                      <div style={{
-                        width: `${(scoreValue / 5) * 100}%`,
-                        height: '100%',
-                        backgroundColor: '#5887FF'
-                      }} />
-                    </div>
-                    <span style={{ 
-                      fontSize: '16px', 
-                      fontWeight: 'bold',
-                      minWidth: '40px',
-                      textAlign: 'right'
-                    }}>
-                      {scoreValue.toFixed(1)}
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
-        </div>
-      </div>
-
-      {/* 액션 버튼 */}
-      <div style={{ padding: '24px 0' }}>
-        <button
-          onClick={() => router.push('/survey')}
-          className="btn btn-primary"
-          style={{ width: '100%', marginBottom: '12px' }}
         >
           다른 설문 진행하기
         </button>
         <button
           onClick={() => router.push('/')}
-          className="btn btn-secondary"
-          style={{ width: '100%' }}
+          style={{
+            display: 'block',
+            width: '100%',
+            textAlign: 'center',
+            padding: '8px',
+            color: '#667eea',
+            fontSize: '14px',
+            fontWeight: '600',
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer'
+          }}
         >
-          메인으로 돌아가기
+          ← 홈으로
         </button>
       </div>
     </div>
   );
-} 
+}

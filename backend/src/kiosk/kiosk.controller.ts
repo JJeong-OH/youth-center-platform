@@ -60,17 +60,39 @@ export class KioskController {
 
   // ============= AI 채팅 엔드포인트 =============
 
-  @Post('ai/chat')
-  async sendAIMessage(
-    @Body()
-    body: {
-      message: string;
-      sessionId: string;
-      type: 'counselor' | 'recommender';
-    },
-  ) {
-    try {
-      // ✅ sessionId를 userId로 사용 (키오스크는 세션 기반)
+@Post('ai/chat')
+async sendAIMessage(
+  @Body()
+  body: {
+    message: string;
+    sessionId: string;
+    type: 'counselor' | 'recommender';
+    programs?: any[];
+  },
+) {
+  try {
+    console.log('🔍 받은 type:', body.type);
+    console.log('🔍 받은 programs:', body.programs?.length, '개');
+    
+    // ✅ type에 따라 다른 메서드 호출
+    if (body.type === 'recommender' && body.programs) {
+      // 프로그램 추천 모드
+      const result = await this.aiService.recommendPrograms(
+        body.message,
+        body.programs,
+        body.sessionId
+      );
+      
+      return {
+        success: true,
+        data: {
+          text: result.reply,
+          recommendedPrograms: result.recommendedPrograms,
+          functionCalls: [],
+        },
+      };
+    } else {
+      // 일반 상담 모드
       const response = await this.aiService.sendChatMessage(
         body.message,
         body.sessionId,
@@ -83,17 +105,18 @@ export class KioskController {
           functionCalls: [],
         },
       };
-    } catch (error) {
-      return {
-        success: false,
-        message: error.message,
-        data: {
-          text: '죄송합니다. 지금은 답변을 드릴 수 없어요. 잠시 후 다시 시도해주세요.',
-          functionCalls: [],
-        },
-      };
     }
+  } catch (error) {
+    return {
+      success: false,
+      message: error.message,
+      data: {
+        text: '죄송합니다. 지금은 답변을 드릴 수 없어요. 잠시 후 다시 시도해주세요.',
+        functionCalls: [],
+      },
+    };
   }
+}
 
   // ============= 시설/프로그램 정보 조회 =============
 

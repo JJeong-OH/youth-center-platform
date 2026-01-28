@@ -23,7 +23,7 @@ export class ProgramService {
     디지털역량: ['코딩 교육', '영상 제작', '디지털 콘텐츠 제작'],
   };
 
-  // 사용자 맞춤 프로그램 추천 (기존 로직)
+  // 사용자 맞춤 프로그램 추천
   async getRecommendedPrograms(userId: number) {
     const latestResult = await prisma.testResult.findFirst({
       where: { user_id: userId },
@@ -67,7 +67,7 @@ export class ProgramService {
     };
   }
 
-  // 전체 프로그램 목록 (includeInactive 파라미터 추가)
+  // 전체 프로그램 목록
   async getAllPrograms(includeInactive = false) {
     const programs = await prisma.program.findMany({
       where: includeInactive ? {} : { isActive: true },
@@ -99,7 +99,7 @@ export class ProgramService {
     };
   }
 
-  // 프로그램 생성 (관리자용 - 확장)
+  // ✅ 프로그램 생성 - 자동 순서 할당
   async createProgram(data: {
     title: string;
     department?: string;
@@ -114,6 +114,15 @@ export class ProgramService {
     tags?: string[];
     order?: number;
   }) {
+    // ✅ order가 없으면 자동으로 마지막 순서 + 1
+    let order = data.order;
+    if (order === undefined || order === null) {
+      const maxOrder = await prisma.program.aggregate({
+        _max: { order: true },
+      });
+      order = (maxOrder._max.order || 0) + 1;
+    }
+
     const program = await prisma.program.create({
       data: {
         title: data.title,
@@ -127,7 +136,7 @@ export class ProgramService {
         description: data.description,
         imageUrl: data.imageUrl,
         tags: data.tags || [],
-        order: data.order || 0,
+        order: order,
         isActive: true,
       },
     });
@@ -139,7 +148,7 @@ export class ProgramService {
     };
   }
 
-  // 프로그램 수정
+  // ✅ 프로그램 수정 - 제공된 필드만 업데이트
   async updateProgram(
     id: number,
     data: {
@@ -159,13 +168,26 @@ export class ProgramService {
     },
   ) {
     try {
+      // ✅ undefined인 필드는 제외
+      const updateData: any = {};
+      
+      if (data.title !== undefined) updateData.title = data.title;
+      if (data.department !== undefined) updateData.department = data.department;
+      if (data.startDate !== undefined) updateData.startDate = new Date(data.startDate);
+      if (data.endDate !== undefined) updateData.endDate = new Date(data.endDate);
+      if (data.targetAudience !== undefined) updateData.targetAudience = data.targetAudience;
+      if (data.capacity !== undefined) updateData.capacity = data.capacity;
+      if (data.fee !== undefined) updateData.fee = data.fee;
+      if (data.recruitStatus !== undefined) updateData.recruitStatus = data.recruitStatus;
+      if (data.description !== undefined) updateData.description = data.description;
+      if (data.imageUrl !== undefined) updateData.imageUrl = data.imageUrl;
+      if (data.tags !== undefined) updateData.tags = data.tags;
+      if (data.order !== undefined) updateData.order = data.order;
+      if (data.isActive !== undefined) updateData.isActive = data.isActive;
+
       const program = await prisma.program.update({
         where: { id },
-        data: {
-          ...data,
-          startDate: data.startDate ? new Date(data.startDate) : undefined,
-          endDate: data.endDate ? new Date(data.endDate) : undefined,
-        },
+        data: updateData,
       });
 
       return {
@@ -181,15 +203,13 @@ export class ProgramService {
     }
   }
 
-  // ✅ 프로그램 삭제 (Hard Delete로 변경!)
+  // 프로그램 삭제 (Hard Delete)
   async deleteProgram(id: number) {
     try {
-      // 먼저 관련 신청 내역 삭제
       await prisma.programApplication.deleteMany({
         where: { program_id: id },
       });
 
-      // 프로그램 삭제
       await prisma.program.delete({
         where: { id },
       });

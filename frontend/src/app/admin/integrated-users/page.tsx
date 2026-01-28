@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
+import Link from 'next/link';
 
 interface IntegratedUser {
   type: 'member' | 'guest';
@@ -28,12 +29,40 @@ interface IntegratedUser {
 
 export default function IntegratedUsersPage() {
   const router = useRouter();
+  const pathname = usePathname();
   const [users, setUsers] = useState<IntegratedUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState<IntegratedUser | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'member' | 'guest'>('all');
+  const [adminInfo, setAdminInfo] = useState<any>(null);
+
+  const menuItems = [
+    { path: '/admin/dashboard', label: '대시보드', icon: '■' },
+    { path: '/admin/users', label: '회원 관리', icon: '■' },
+    { path: '/admin/integrated-users', label: '통합 회원 관리', icon: '■' },
+    { path: '/admin/programs', label: '프로그램 관리', icon: '■' },
+    { path: '/admin/facilities', label: '시설 관리', icon: '■' },
+    { path: '/admin/bookings', label: '예약 관리', icon: '■' },
+    { path: '/admin/surveys', label: '설문 통계', icon: '■' },
+  ];
+
+  useEffect(() => {
+    const token = localStorage.getItem('adminToken');
+    const info = localStorage.getItem('adminInfo');
+    
+    if (!token) {
+      router.push('/admin/login');
+      return;
+    }
+
+    if (info) {
+      setAdminInfo(JSON.parse(info));
+    }
+
+    fetchUsers();
+  }, [router]);
 
   const fetchUsers = async () => {
     try {
@@ -55,10 +84,6 @@ export default function IntegratedUsersPage() {
     }
   };
 
-  useEffect(() => {
-    fetchUsers();
-  }, []);
-
   const filteredUsers = users.filter(user => {
     const matchesSearch = user.name.includes(searchTerm) || user.phone.includes(searchTerm);
     const matchesType = filterType === 'all' || user.type === filterType;
@@ -70,53 +95,143 @@ export default function IntegratedUsersPage() {
     setShowDetailModal(true);
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem('adminToken');
+    localStorage.removeItem('adminInfo');
+    router.push('/admin/login');
+  };
+
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#f8fafc' }}>
-      {/* 헤더 */}
-      <header style={{
-        backgroundColor: 'white',
-        borderBottom: '1px solid #e2e8f0',
-        padding: '16px 24px',
-        marginBottom: '32px'
+    <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#f8fafc' }}>
+      {/* 사이드바 */}
+      <aside style={{
+        width: '260px',
+        backgroundColor: '#1e293b',
+        color: 'white',
+        display: 'flex',
+        flexDirection: 'column',
+        position: 'fixed',
+        height: '100vh',
+        left: 0,
+        top: 0
       }}>
         <div style={{
-          maxWidth: '1400px',
-          margin: '0 auto',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center'
+          padding: '28px 24px',
+          borderBottom: '1px solid rgba(255,255,255,0.1)'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <button
-              onClick={() => router.push('/admin/dashboard')}
-              style={{
-                padding: '8px 16px',
-                backgroundColor: '#f1f5f9',
-                color: '#475569',
-                border: '1px solid #e2e8f0',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                fontSize: '14px',
-                fontWeight: '600'
-              }}
-            >
-              ← 대시보드
-            </button>
-            <div>
-              <h1 style={{ fontSize: '24px', fontWeight: '700', color: '#1e293b', margin: 0 }}>
-                통합 회원 관리
-              </h1>
-              <p style={{ fontSize: '13px', color: '#64748b', margin: 0 }}>
-                회원 및 비회원 활동 통합 현황
-              </p>
+          <h1 style={{
+            fontSize: '20px',
+            fontWeight: '700',
+            margin: 0,
+            color: 'white'
+          }}>
+            청소년센터
+          </h1>
+          <p style={{
+            fontSize: '13px',
+            color: '#94a3b8',
+            margin: '4px 0 0 0'
+          }}>
+            관리자 시스템
+          </p>
+        </div>
+
+        <nav style={{ flex: 1, padding: '16px 0' }}>
+          {menuItems.map((item) => {
+            const isActive = pathname === item.path;
+            return (
+              <Link
+                key={item.path}
+                href={item.path}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  padding: '14px 24px',
+                  color: isActive ? 'white' : '#94a3b8',
+                  textDecoration: 'none',
+                  fontSize: '15px',
+                  fontWeight: isActive ? '600' : '500',
+                  backgroundColor: isActive ? 'rgba(59, 130, 246, 0.1)' : 'transparent',
+                  borderLeft: isActive ? '3px solid #3b82f6' : '3px solid transparent',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => {
+                  if (!isActive) {
+                    e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.05)';
+                    e.currentTarget.style.color = 'white';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isActive) {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                    e.currentTarget.style.color = '#94a3b8';
+                  }
+                }}
+              >
+                <span style={{ fontSize: '10px', opacity: 0.5 }}>{item.icon}</span>
+                {item.label}
+              </Link>
+            );
+          })}
+        </nav>
+
+        <div style={{
+          padding: '20px 24px',
+          borderTop: '1px solid rgba(255,255,255,0.1)'
+        }}>
+          <div style={{ marginBottom: '12px' }}>
+            <div style={{ fontSize: '14px', fontWeight: '600', color: 'white', marginBottom: '2px' }}>
+              {adminInfo?.name || '관리자'}
+            </div>
+            <div style={{ fontSize: '12px', color: '#94a3b8' }}>
+              {adminInfo?.email}
             </div>
           </div>
+          <button
+            onClick={handleLogout}
+            style={{
+              width: '100%',
+              padding: '10px',
+              backgroundColor: 'rgba(255,255,255,0.1)',
+              color: 'white',
+              border: '1px solid rgba(255,255,255,0.2)',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontSize: '14px',
+              fontWeight: '500'
+            }}
+          >
+            로그아웃
+          </button>
         </div>
-      </header>
+      </aside>
 
       {/* 메인 컨텐츠 */}
-      <main style={{ maxWidth: '1400px', margin: '0 auto', padding: '0 24px 32px' }}>
-        {/* 통계 카드 */}
+      <main style={{
+        marginLeft: '260px',
+        flex: 1,
+        padding: '32px 40px',
+        width: 'calc(100vw - 260px)'
+      }}>
+        <div style={{ marginBottom: '32px' }}>
+          <h2 style={{
+            fontSize: '28px',
+            fontWeight: '700',
+            color: '#0f172a',
+            marginBottom: '4px'
+          }}>
+            통합 회원 관리
+          </h2>
+          <p style={{
+            fontSize: '14px',
+            color: '#64748b',
+            margin: 0
+          }}>
+            회원 및 비회원 활동 통합 현황
+          </p>
+        </div>
+
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}>
           <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
             <p style={{ fontSize: '13px', color: '#64748b', margin: 0 }}>전체 사용자</p>
@@ -144,7 +259,6 @@ export default function IntegratedUsersPage() {
           </div>
         </div>
 
-        {/* 필터 */}
         <div style={{ backgroundColor: 'white', padding: '16px 24px', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '16px' }}>
           <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
             <input
@@ -177,7 +291,6 @@ export default function IntegratedUsersPage() {
           </div>
         </div>
 
-        {/* 사용자 테이블 */}
         <div style={{ backgroundColor: 'white', borderRadius: '8px', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
           {loading ? (
             <div style={{ padding: '60px', textAlign: 'center', color: '#64748b' }}>
@@ -200,8 +313,8 @@ export default function IntegratedUsersPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredUsers.map((user) => (
-                    <tr key={`${user.type}-${user.phone}`} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                  {filteredUsers.map((user, index) => (
+                    <tr key={`${user.type}-${user.phone}-${index}`} style={{ borderBottom: '1px solid #e2e8f0' }}>
                       <td style={tableCellStyle}>
                         <span style={{
                           padding: '4px 12px',
@@ -259,7 +372,6 @@ export default function IntegratedUsersPage() {
         </div>
       </main>
 
-      {/* 상세 모달 */}
       {showDetailModal && selectedUser && (
         <div style={{
           position: 'fixed',
@@ -317,7 +429,6 @@ export default function IntegratedUsersPage() {
               </button>
             </div>
 
-            {/* 프로그램 신청 내역 */}
             <div style={{ marginBottom: '24px' }}>
               <h3 style={{ fontSize: '16px', fontWeight: '700', marginBottom: '12px', color: '#1e293b' }}>
                 프로그램 신청 내역 ({selectedUser.programCount}건)
@@ -364,7 +475,6 @@ export default function IntegratedUsersPage() {
               )}
             </div>
 
-            {/* 시설 예약 내역 */}
             <div>
               <h3 style={{ fontSize: '16px', fontWeight: '700', marginBottom: '12px', color: '#1e293b' }}>
                 시설 예약 내역 ({selectedUser.facilityCount}건)

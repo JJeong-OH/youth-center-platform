@@ -40,16 +40,11 @@
 body {
   margin: 0;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  
-  /* ✨ 3. body에 애니메이션 그라데이션 배경 적용 
-    (파스텔톤의 하늘색, 보라색, 핑크색이 천천히 움직임)
-  */
   background: linear-gradient(-45deg, #e0f7fa, #e1f5fe, #ede7f6, #fce4ec);
   background-size: 400% 400%;
-  animation: gradient-bg 15s ease infinite; /* 15초 주기로 배경이 움직임 */
+  animation: gradient-bg 15s ease infinite; 
 }
 
-/* 기존 스크롤바 스타일 (유지) */
 .custom-scrollbar::-webkit-scrollbar {
   width: 8px;
 }

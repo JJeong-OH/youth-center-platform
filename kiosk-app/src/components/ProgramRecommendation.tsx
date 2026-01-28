@@ -133,7 +133,7 @@ const ProgramCard: React.FC<{ program: Program, onApply: (program: Program) => v
     <div className="bg-white/70 backdrop-blur-xl rounded-xl shadow-lg border border-white/30 p-4 flex flex-col transition-all duration-300 hover:shadow-xl hover:border-white">
         <h3 className="text-base font-bold text-slate-800 line-clamp-2">{program.title}</h3>
         <p className="text-xs font-semibold text-indigo-500 my-1">{program.department || '청소년센터'}</p>
-        <p className="text-slate-600 mt-1 flex-grow text-xs line-clamp-2">{program.description}</p>
+        <p className="text-slate-600 mt-1 flex-grow text-xs line-clamp-4">{program.description}</p>
         
         <div className="mt-2 flex flex-wrap gap-1">
             {program.targetAudience && (

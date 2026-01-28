@@ -1,118 +1,106 @@
-import {
-  Injectable,
-  ConflictException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
-import { JwtService } from '@nestjs/jwt';
 
 const prisma = new PrismaClient();
 
 @Injectable()
 export class AuthService {
-  constructor(private jwtService: JwtService) {}
+  constructor(private readonly jwtService: JwtService) {}
 
-  // 회원가입
-  async signup(
-    email: string,
-    password: string,
-    name: string,
-    phoneNumber?: string,
-    dob?: string,
-    gender?: string,
-  ) {
-    // 이메일 중복 확인
+  generateToken(user: any) {
+    const payload = {
+      userId: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+    };
+    return this.jwtService.sign(payload);
+  }
+
+  async signup(signupDto: any) {
+    const { email, password, name, phoneNumber } = signupDto;
+
     const existingUser = await prisma.user.findUnique({
       where: { email },
     });
 
     if (existingUser) {
-      throw new ConflictException('이미 존재하는 이메일입니다.');
+      throw new BadRequestException('이미 존재하는 이메일입니다.');
     }
 
-    // 비밀번호 해싱
-    const password_hash = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-    // User와 Profile을 함께 생성
-    const user = await prisma.user.create({
+    const newUser = await prisma.user.create({
       data: {
         email,
-        password_hash,
+        password_hash: hashedPassword,
         name,
+        phone_number: phoneNumber ? phoneNumber.replace(/-/g, '') : null,
         role: 'USER',
-        profiles: {
-          create: {
-            phone: phoneNumber || null,
-            grade: dob || null,
-          },
-        },
-      },
-      include: {
-        profiles: true,
       },
     });
 
+    const accessToken = this.generateToken(newUser);
+
     return {
+      success: true,
       message: '회원가입이 완료되었습니다.',
-      userId: user.id,
-      email: user.email,
-      name: user.name,
+      user: {
+        userId: newUser.id,
+        email: newUser.email,
+        name: newUser.name,
+        role: newUser.role,
+      },
+      accessToken,
     };
   }
 
-  // 로그인
-  async login(email: string, password: string) {
+  async login(loginDto: any) {
+    const { email, password } = loginDto;
+
     const user = await prisma.user.findUnique({
       where: { email },
     });
 
     if (!user) {
-      throw new UnauthorizedException(
-        '이메일 또는 비밀번호가 잘못되었습니다.',
-      );
+      throw new BadRequestException('이메일 또는 비밀번호가 일치하지 않습니다.');
+    }
+
+    if (loginDto.role && user.role !== loginDto.role) {
+      throw new BadRequestException('권한이 없습니다.');
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password_hash);
 
     if (!isPasswordValid) {
-      throw new UnauthorizedException(
-        '이메일 또는 비밀번호가 잘못되었습니다.',
-      );
+      throw new BadRequestException('이메일 또는 비밀번호가 일치하지 않습니다.');
     }
 
-    // JWT 토큰 생성
-    const payload = {
-      userId: user.id,
-      email: user.email,
-      name: user.name,
-    };
-
-    console.log('토큰 페이로드:', payload);
-
-    const access_token = this.jwtService.sign(payload);
+    const accessToken = this.generateToken(user);
 
     return {
-      access_token,
+      success: true,
+      message: '로그인에 성공했습니다.',
       user: {
         userId: user.id,
         email: user.email,
         name: user.name,
+        role: user.role,
       },
+      accessToken,
     };
   }
 
-  // 프로필 조회
   async getProfile(userId: number) {
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      include: {
-        profiles: true,
-      },
+      include: { profiles: true },
     });
 
     if (!user) {
-      throw new UnauthorizedException('사용자를 찾을 수 없습니다.');
+      throw new BadRequestException('사용자를 찾을 수 없습니다.');
     }
 
     const profile = user.profiles[0];
@@ -121,69 +109,55 @@ export class AuthService {
       userId: user.id,
       email: user.email,
       name: user.name,
-      role: user.role,
-      profile: profile
-        ? {
-            grade: profile.grade,
-            phone: profile.phone,
-            interests: profile.interests,
-          }
-        : null,
+      phoneNumber: user.phone_number,
+      dateOfBirth: user.dob,
+      gender: user.gender,
+      grade: profile?.grade,
+      interests: profile?.interests,
+      phone: profile?.phone,
     };
   }
 
-  // 프로필 업데이트
-  async updateProfile(
-    userId: number,
-    data: {
-      name?: string;
-      grade?: string;
-      phoneNumber?: string;
-      interests?: any;
-    },
-  ) {
-    // User의 name 업데이트 (있는 경우)
-    if (data.name) {
-      await prisma.user.update({
-        where: { id: userId },
-        data: { name: data.name },
-      });
-    }
-
-    const user = await prisma.user.findUnique({
+  async updateProfile(userId: number, updateDto: any) {
+    // User 테이블 업데이트
+    await prisma.user.update({
       where: { id: userId },
-      include: { profiles: true },
+      data: {
+        name: updateDto.name,
+        phone_number: updateDto.phoneNumber,
+        dob: updateDto.dateOfBirth ? new Date(updateDto.dateOfBirth) : undefined,
+        gender: updateDto.gender,
+      },
     });
 
-    if (!user) {
-      throw new UnauthorizedException('사용자를 찾을 수 없습니다.');
-    }
+    // Profile 테이블 업데이트
+    const existingProfile = await prisma.profile.findFirst({
+      where: { user_id: userId },
+    });
 
-    let profile;
-
-    if (user.profiles.length > 0) {
-      profile = await prisma.profile.update({
-        where: { id: user.profiles[0].id },
+    if (existingProfile) {
+      await prisma.profile.update({
+        where: { id: existingProfile.id },
         data: {
-          grade: data.grade,
-          phone: data.phoneNumber,
-          interests: data.interests,
+          grade: updateDto.grade,
+          interests: updateDto.interests,
+          phone: updateDto.phoneNumber,
         },
       });
     } else {
-      profile = await prisma.profile.create({
+      await prisma.profile.create({
         data: {
           user_id: userId,
-          grade: data.grade,
-          phone: data.phoneNumber,
-          interests: data.interests,
+          grade: updateDto.grade,
+          interests: updateDto.interests,
+          phone: updateDto.phoneNumber,
         },
       });
     }
 
     return {
+      success: true,
       message: '프로필이 업데이트되었습니다.',
-      profile,
     };
   }
 }

@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
+import Link from 'next/link';
 
 interface Survey {
   id: number;
@@ -13,13 +14,37 @@ interface Survey {
 
 export default function AdminSurveysPage() {
   const router = useRouter();
+  const pathname = usePathname();
   const [surveys, setSurveys] = useState<Survey[]>([]);
   const [totalSurveys, setTotalSurveys] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [adminInfo, setAdminInfo] = useState<any>(null);
+
+  const menuItems = [
+    { path: '/admin/dashboard', label: '대시보드', icon: '■' },
+    { path: '/admin/users', label: '회원 관리', icon: '■' },
+    { path: '/admin/integrated-users', label: '통합 회원 관리', icon: '■' },
+    { path: '/admin/programs', label: '프로그램 관리', icon: '■' },
+    { path: '/admin/facilities', label: '시설 관리', icon: '■' },
+    { path: '/admin/bookings', label: '예약 관리', icon: '■' },
+    { path: '/admin/surveys', label: '설문 통계', icon: '■' },
+  ];
 
   useEffect(() => {
+    const token = localStorage.getItem('adminToken');
+    const info = localStorage.getItem('adminInfo');
+    
+    if (!token) {
+      router.push('/admin/login');
+      return;
+    }
+
+    if (info) {
+      setAdminInfo(JSON.parse(info));
+    }
+
     fetchSurveyStats();
-  }, []);
+  }, [router]);
 
   const fetchSurveyStats = async () => {
     try {
@@ -46,46 +71,147 @@ export default function AdminSurveysPage() {
     return new Date(dateString).toLocaleDateString('ko-KR');
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem('adminToken');
+    localStorage.removeItem('adminInfo');
+    router.push('/admin/login');
+  };
+
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#f8fafc' }}>
-      {/* 헤더 */}
-      <header style={{
-        backgroundColor: 'white',
-        borderBottom: '1px solid #e2e8f0',
-        padding: '16px 24px',
-        marginBottom: '32px'
+    <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#f8fafc' }}>
+      {/* 사이드바 */}
+      <aside style={{
+        width: '260px',
+        backgroundColor: '#1e293b',
+        color: 'white',
+        display: 'flex',
+        flexDirection: 'column',
+        position: 'fixed',
+        height: '100vh',
+        left: 0,
+        top: 0
       }}>
         <div style={{
-          maxWidth: '1400px',
-          margin: '0 auto',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center'
+          padding: '28px 24px',
+          borderBottom: '1px solid rgba(255,255,255,0.1)'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <button
-              onClick={() => router.push('/admin/dashboard')}
-              style={{
-                padding: '8px 16px',
-                backgroundColor: '#f1f5f9',
-                color: '#475569',
-                border: '1px solid #e2e8f0',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                fontSize: '14px',
-                fontWeight: '600'
-              }}
-            >
-              ← 대시보드
-            </button>
-            <div>
-              <h1 style={{ fontSize: '24px', fontWeight: '700', color: '#1e293b', margin: 0 }}>
-                설문 통계
-              </h1>
-              <p style={{ fontSize: '13px', color: '#64748b', margin: 0 }}>
-                설문조사 참여 현황 및 결과
-              </p>
+          <h1 style={{
+            fontSize: '20px',
+            fontWeight: '700',
+            margin: 0,
+            color: 'white'
+          }}>
+            청소년센터
+          </h1>
+          <p style={{
+            fontSize: '13px',
+            color: '#94a3b8',
+            margin: '4px 0 0 0'
+          }}>
+            관리자 시스템
+          </p>
+        </div>
+
+        <nav style={{ flex: 1, padding: '16px 0' }}>
+          {menuItems.map((item) => {
+            const isActive = pathname === item.path;
+            return (
+              <Link
+                key={item.path}
+                href={item.path}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  padding: '14px 24px',
+                  color: isActive ? 'white' : '#94a3b8',
+                  textDecoration: 'none',
+                  fontSize: '15px',
+                  fontWeight: isActive ? '600' : '500',
+                  backgroundColor: isActive ? 'rgba(59, 130, 246, 0.1)' : 'transparent',
+                  borderLeft: isActive ? '3px solid #3b82f6' : '3px solid transparent',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => {
+                  if (!isActive) {
+                    e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.05)';
+                    e.currentTarget.style.color = 'white';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isActive) {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                    e.currentTarget.style.color = '#94a3b8';
+                  }
+                }}
+              >
+                <span style={{ fontSize: '10px', opacity: 0.5 }}>{item.icon}</span>
+                {item.label}
+              </Link>
+            );
+          })}
+        </nav>
+
+        <div style={{
+          padding: '20px 24px',
+          borderTop: '1px solid rgba(255,255,255,0.1)'
+        }}>
+          <div style={{ marginBottom: '12px' }}>
+            <div style={{ fontSize: '14px', fontWeight: '600', color: 'white', marginBottom: '2px' }}>
+              {adminInfo?.name || '관리자'}
             </div>
+            <div style={{ fontSize: '12px', color: '#94a3b8' }}>
+              {adminInfo?.email}
+            </div>
+          </div>
+          <button
+            onClick={handleLogout}
+            style={{
+              width: '100%',
+              padding: '10px',
+              backgroundColor: 'rgba(255,255,255,0.1)',
+              color: 'white',
+              border: '1px solid rgba(255,255,255,0.2)',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontSize: '14px',
+              fontWeight: '500'
+            }}
+          >
+            로그아웃
+          </button>
+        </div>
+      </aside>
+
+      {/* 메인 컨텐츠 */}
+      <main style={{
+        marginLeft: '260px',
+        flex: 1,
+        padding: '32px 40px',
+        width: 'calc(100vw - 260px)'
+      }}>
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center',
+          marginBottom: '32px' 
+        }}>
+          <div>
+            <h2 style={{
+              fontSize: '28px',
+              fontWeight: '700',
+              color: '#0f172a',
+              marginBottom: '4px'
+            }}>
+              설문 통계
+            </h2>
+            <p style={{
+              fontSize: '14px',
+              color: '#64748b',
+              margin: 0
+            }}>
+              설문조사 참여 현황 및 결과
+            </p>
           </div>
           <div style={{
             padding: '12px 24px',
@@ -97,10 +223,7 @@ export default function AdminSurveysPage() {
             총 {totalSurveys}건
           </div>
         </div>
-      </header>
 
-      {/* 메인 컨텐츠 */}
-      <main style={{ maxWidth: '1400px', margin: '0 auto', padding: '0 24px 32px' }}>
         <div style={{ backgroundColor: 'white', borderRadius: '8px', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
           {loading ? (
             <div style={{ padding: '60px', textAlign: 'center', color: '#64748b' }}>

@@ -8,7 +8,6 @@ export interface ChatMessage {
   functionCall?: FunctionCall;
 }
 
-// ✅ DB 구조에 맞게 수정
 export interface Program {
   id: number;
   title: string;

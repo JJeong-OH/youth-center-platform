@@ -9,12 +9,11 @@ interface Message {
   sender: 'user' | 'ai';
 }
 
-// AI 응답을 흉내 내는 가짜 함수 (나중에 Gemini API로 교체)
 const getFakeAiResponse = (userMessage: string): Promise<string> => {
   return new Promise((resolve) => {
     setTimeout(() => {
       resolve(`"${userMessage}" 라고 말씀하셨네요. 저는 AI 상담사입니다. 무엇이든 편하게 이야기해주세요.`);
-    }, 1000); // 1초 딜레이
+    }, 1000); 
   });
 };
 

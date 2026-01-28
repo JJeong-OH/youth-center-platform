@@ -24,10 +24,9 @@ function App() {
     setFacilityViewMode('new');
   };
 
-  // ✅ 예약확인 버튼 핸들러 - '예약 확인/취소' 탭으로 이동
   const handleCheckReservation = () => {
     setCurrentView('facilities');
-    setFacilityViewMode('check');  // ✅ 예약 확인 탭으로!
+    setFacilityViewMode('check');  
   };
 
   if (currentView === 'landing') {
@@ -48,7 +47,7 @@ function App() {
           {currentView === 'facilities' && (
             <FacilityReservation 
               onBack={handleBackToLanding} 
-              initialViewMode={facilityViewMode}  // ✅ prop으로 전달
+              initialViewMode={facilityViewMode}  
             />
           )}
           {currentView === 'recommend' && <ProgramRecommendation onBack={handleBackToLanding} />}

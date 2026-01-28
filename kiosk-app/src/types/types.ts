@@ -1,6 +1,5 @@
 import type { FunctionCall } from '@google/genai';
 
-// ✅ 'landing' 추가
 export type View = 'landing' | 'counselor' | 'facilities' | 'recommend';
 
 export interface ChatMessage {

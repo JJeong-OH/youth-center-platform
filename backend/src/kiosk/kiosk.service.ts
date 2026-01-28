@@ -111,6 +111,7 @@ export class KioskService {
     });
   }
 
+  // ✅ 수정된 getBookings 메서드
   async getBookings(status?: string) {
     try {
       const whereClause: any = {};
@@ -119,17 +120,9 @@ export class KioskService {
         whereClause.status = status;
       }
 
+      // ✅ 먼저 모든 booking을 가져옴
       const bookings = await prisma.booking.findMany({
         where: whereClause,
-        include: {
-          facility: {
-            select: {
-              id: true,
-              name: true,
-              icon: true
-            }
-          }
-        },
         orderBy: {
           createdAt: 'desc'
         }
@@ -137,22 +130,47 @@ export class KioskService {
 
       console.log('✅ 예약 목록 조회:', bookings.length, '건');
 
-      return bookings.map(b => ({
-        id: b.id,
-        facility_id: b.facilityId,
-        user_name: b.userName,
-        date: b.date,
-        time_slot: b.timeSlot,
-        phone: b.phone,
-        status: b.status,
-        source: b.source,
-        created_at: b.createdAt,
-        facility: {
-          id: b.facility.id,
-          name: b.facility.name,
-          icon: b.facility.icon
-        }
-      }));
+      // ✅ 각 booking에 대해 facility 정보를 개별적으로 조회
+      const bookingsWithFacility = await Promise.all(
+        bookings.map(async (b) => {
+          let facility: { id: string; name: string; icon: string; } | null = null;
+          
+          // facility_id가 있으면 조회 시도
+          if (b.facilityId) {
+            try {
+              facility = await prisma.facility.findUnique({
+                where: { id: b.facilityId },
+                select: {
+                  id: true,
+                  name: true,
+                  icon: true
+                }
+              });
+            } catch (error) {
+              console.warn(`⚠️ Facility ${b.facilityId} not found for booking ${b.id}`);
+            }
+          }
+
+          return {
+            id: b.id,
+            facility_id: b.facilityId,
+            user_name: b.userName,
+            date: b.date,
+            time_slot: b.timeSlot,
+            phone: b.phone,
+            status: b.status,
+            source: b.source,
+            created_at: b.createdAt,
+            facility: facility ? {
+              id: facility.id,
+              name: facility.name,
+              icon: facility.icon
+            } : null // ✅ facility가 없으면 null 반환
+          };
+        })
+      );
+
+      return bookingsWithFacility;
     } catch (error) {
       console.error('❌ 예약 목록 조회 실패:', error);
       throw error;
@@ -238,19 +256,25 @@ export class KioskService {
           phone: data.phone || null,
           status: 'active',
           source: 'kiosk',
-        },
-        include: {
-          facility: {
-            select: {
-              id: true,
-              name: true,
-              icon: true
-            }
-          }
         }
       });
 
       console.log('✅ 예약 생성 완료:', booking);
+
+      // ✅ facility 정보 조회 (없을 수도 있음)
+      let facility: { id: string; name: string; icon: string; } | null = null;
+      try {
+        facility = await prisma.facility.findUnique({
+          where: { id: booking.facilityId },
+          select: {
+            id: true,
+            name: true,
+            icon: true
+          }
+        });
+      } catch (error) {
+        console.warn(`⚠️ Facility ${booking.facilityId} not found`);
+      }
 
       return {
         id: booking.id,
@@ -262,11 +286,11 @@ export class KioskService {
         status: booking.status,
         source: booking.source,
         created_at: booking.createdAt,
-        facility: {
-          id: booking.facility.id,
-          name: booking.facility.name,
-          icon: booking.facility.icon
-        }
+        facility: facility ? {
+          id: facility.id,
+          name: facility.name,
+          icon: facility.icon
+        } : null
       };
     } catch (error) {
       console.error('❌ 예약 생성 실패:', error);

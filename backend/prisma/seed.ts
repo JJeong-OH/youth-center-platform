@@ -4,182 +4,413 @@ import * as bcrypt from 'bcrypt';
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('🌱 Seeding database...');
+  console.log('🌱 시드 데이터 생성 시작...');
 
-  // 1. 관리자 계정 생성
-  const adminPassword = await bcrypt.hash('wjdgus!123', 10);
+  // ✅ 1. 관리자 계정
+  const hashedPassword = await bcrypt.hash('admin123', 10);
   
-  const admin = await prisma.user.upsert({
-    where: { email: 'whtpq159@naver.com' },
+  await prisma.user.upsert({
+    where: { email: 'admin@youth.com' },
     update: {},
     create: {
-      email: 'whtpq159@naver.com',
-      password_hash: adminPassword,
-      name: '오정현',
+      email: 'admin@youth.com',
+      password_hash: hashedPassword,
+      name: '관리자',
+      phone_number: '010-0000-0000',
       role: 'ADMIN',
+      dob: new Date('1990-01-01'),
+      gender: 'OTHER',
     },
   });
+  console.log('✅ 관리자 계정 생성 완료! (admin@youth.com / admin123)');
 
-  console.log('✅ 관리자 계정 생성:', admin.email);
-
-  // 2. 테스트 유저 생성
-  const userPassword = await bcrypt.hash('test123', 10);
-  
-  const testUser = await prisma.user.upsert({
-    where: { email: 'test@example.com' },
-    update: {},
-    create: {
-      email: 'test@example.com',
-      password_hash: userPassword,
-      name: '테스트유저',
-      role: 'USER',
-      profiles: {
-        create: {
-          grade: '고등학교 2학년',
-          phone: '010-1234-5678',
-        },
+  // ✅ 2. 시설 데이터
+  await prisma.facility.createMany({
+    data: [
+      {
+        id: 'link-stage',
+        name: 'Link Stage',
+        icon: '💃',
+        description: '댄스연습실 - 무대로 연결되는 꿈의 공간',
+        capacity: 20,
+        floor: '3층',
+        isActive: true,
+        order: 1,
       },
-    },
-  });
-
-  console.log('✅ 테스트 유저 생성:', testUser.email);
-
-  // 3. 시설 3개 생성
-  const facilities = [
-    {
-      id: 'fac_dance',
-      name: '댄스 연습실',
-      icon: '💃',
-      description: '거울이 설치된 넓은 댄스 연습 공간입니다',
-      capacity: 20,
-      order: 1,
-      isActive: true,
-    },
-    {
-      id: 'fac_music',
-      name: '음악 합주실',
-      icon: '🎸',
-      description: '악기 연습 및 밴드 합주가 가능한 방음 시설입니다',
-      capacity: 10,
-      order: 2,
-      isActive: true,
-    },
-    {
-      id: 'fac_study',
-      name: '스터디룸',
-      icon: '📚',
-      description: '조용한 분위기에서 학습할 수 있는 공간입니다',
-      capacity: 8,
-      order: 3,
-      isActive: true,
-    },
-  ];
-
-  for (const facility of facilities) {
-    await prisma.facility.upsert({
-      where: { id: facility.id },
-      update: {},
-      create: facility,
-    });
-  }
-
-  console.log('✅ 시설 생성 완료:', facilities.length, '개');
-
-  // 4. 프로그램 3개 생성
-  const programs = [
-    {
-      title: '청소년 코딩 교실',
-      department: '정보교육팀',
-      startDate: new Date('2025-02-01'),
-      endDate: new Date('2025-02-28'),
-      targetAudience: '중고등학생',
-      capacity: 20,
-      fee: 0,
-      recruitStatus: '모집중',
-      description: '파이썬 기초부터 간단한 게임 만들기까지! 코딩의 세계로 여러분을 초대합니다.',
-      tags: ['디지털역량', '코딩', '무료'],
-      isActive: true,
-      order: 1,
-    },
-    {
-      title: '자기관리 캠프',
-      department: '청소년활동팀',
-      startDate: new Date('2025-01-20'),
-      endDate: new Date('2025-01-22'),
-      targetAudience: '고등학생',
-      capacity: 30,
-      fee: 50000,
-      recruitStatus: '모집중',
-      description: '시간 관리, 목표 설정, 습관 만들기 등 자기관리 능력을 키우는 2박 3일 캠프입니다.',
-      tags: ['자기개발', '캠프', '숙박'],
-      isActive: true,
-      order: 2,
-    },
-    {
-      title: '진로탐색 멘토링',
-      department: '진로지원팀',
-      startDate: new Date('2025-02-10'),
-      endDate: new Date('2025-03-10'),
-      targetAudience: '중고등학생',
-      capacity: 15,
-      fee: 20000,
-      recruitStatus: '모집중',
-      description: '다양한 직업군의 멘토와 만나 진로를 탐색하고 꿈을 구체화하는 프로그램입니다.',
-      tags: ['진로개발', '멘토링', '1:1상담'],
-      isActive: true,
-      order: 3,
-    },
-  ];
-
-  for (const program of programs) {
-    await prisma.program.create({
-      data: program,
-    });
-  }
-
-  console.log('✅ 프로그램 생성 완료:', programs.length, '개');
-
-  // 5. 샘플 예약 생성
-  await prisma.booking.create({
-    data: {
-      facilityId: 'fac_dance',
-      userId: testUser.id,
-      userName: testUser.name,
-      date: new Date('2025-01-20'),
-      timeSlot: '14:00-16:00',
-      phone: '010-1234-5678',
-      status: 'active',
-      source: 'web',
-    },
-  });
-
-  console.log('✅ 샘플 예약 생성 완료');
-
-  // 6. 샘플 설문 결과 생성
-  await prisma.testResult.create({
-    data: {
-      user_id: testUser.id,
-      answers: {
-        자기개발분야: [4, 5, 4, 5, 4],
-        사회참여분야: [3, 4, 3, 4, 3],
-        문화예술분야: [5, 4, 5, 4, 5],
+      {
+        id: 'link-zone',
+        name: 'Link Zone',
+        icon: '🛋️',
+        description: '청소년 자율공간 - 청소년들이 하나되는 휴식 공간',
+        capacity: 30,
+        floor: '4층',
+        isActive: true,
+        order: 2,
       },
-      scores: {
-        자기개발분야: 4.4,
-        사회참여분야: 3.4,
-        문화예술분야: 4.6,
+      {
+        id: 'link-circle',
+        name: 'Link Circle',
+        icon: '🔵',
+        description: '자치활동실 - 청소년들이 둥글게 모여 의견을 연결하는 공간',
+        capacity: 25,
+        floor: '4층',
+        isActive: true,
+        order: 3,
       },
-    },
+      {
+        id: 'link-cloud',
+        name: 'Link Cloud',
+        icon: '💻',
+        description: 'PC방 - 무한한 정보와 네트워크가 연결되는 공간',
+        capacity: 15,
+        floor: '지하1층',
+        isActive: true,
+        order: 4,
+      },
+      {
+        id: 'link-hub',
+        name: 'Link Hub',
+        icon: '🏢',
+        description: '팀룸 - 팀원들이 연결되는 중심지',
+        capacity: 10,
+        floor: '3층',
+        isActive: true,
+        order: 5,
+      },
+    ],
   });
+  console.log('✅ 시설 데이터 5개 생성 완료!');
 
-  console.log('✅ 샘플 설문 결과 생성 완료');
+  // ✅ 3. 프로그램 데이터
+  await prisma.program.createMany({
+    data: [
+      {
+        title: '청소년동아리 연합활동',
+        department: '청소년활동부',
+        startDate: new Date('2025-03-01'),
+        endDate: new Date('2025-12-31'),
+        targetAudience: '중·고등학생',
+        capacity: 100,
+        fee: 0,
+        recruitStatus: 'recruiting',
+        description: '자치기구 발대식과 해단식을 통해 센터에 대한 소속감과 주인의식을 고취. 우수 청소년 시상과 활동 보고를 통해 성취감 공유',
+        imageUrl: null,
+        tags: ['동아리', '자치', '연합활동'],
+        isActive: true,
+        order: 1,
+      },
+      {
+        title: '교육문화 프로그램',
+        department: '교육운영부',
+        startDate: new Date('2025-02-15'),
+        endDate: new Date('2025-06-15'),
+        targetAudience: '초등학생',
+        capacity: 30,
+        fee: 50000,
+        recruitStatus: 'recruiting',
+        description: '초등 요리, 영어, 한자 등 청소년의 니즈를 반영한 다양한 문화 교육 제공. 여가 시간 활용으로 잠재적 가능성 개발',
+        imageUrl: null,
+        tags: ['교육', '문화', '초등'],
+        isActive: true,
+        order: 2,
+      },
+      {
+        title: '생활체육 프로그램',
+        department: '체육문화부',
+        startDate: new Date('2025-03-01'),
+        endDate: new Date('2025-08-31'),
+        targetAudience: '중·고등학생',
+        capacity: 25,
+        fee: 30000,
+        recruitStatus: 'recruiting',
+        description: '음악줄넘기, K-POP 댄스 등 신체 활동을 통한 체력 증진. 정기 강좌와 전문 강사 관리로 질 높은 서비스 제공',
+        imageUrl: null,
+        tags: ['체육', '댄스', '운동'],
+        isActive: true,
+        order: 3,
+      },
+      {
+        title: '미추홀 아카이브',
+        department: '미디어교육부',
+        startDate: new Date('2025-04-01'),
+        endDate: new Date('2025-10-31'),
+        targetAudience: '중·고등학생',
+        capacity: 20,
+        fee: 0,
+        recruitStatus: 'recruiting',
+        description: '미추홀구의 역사, 명소, 인물 취재 및 기록. 글쓰기, 사진 등 아카이빙 교육을 통한 미디어 활용 능력 향상',
+        imageUrl: null,
+        tags: ['아카이브', '미디어', '기록'],
+        isActive: true,
+        order: 4,
+      },
+      {
+        title: '미추홀구 청소년 노래 댄스대회',
+        department: '문화사업부',
+        startDate: new Date('2025-08-15'),
+        endDate: new Date('2025-08-15'),
+        targetAudience: '중·고등학생',
+        capacity: 50,
+        fee: 0,
+        recruitStatus: 'waiting',
+        description: '청소년들이 무대에서 끼와 재능을 발산하는 축제. 예·본선 경연과 시상식으로 지역 주민과 소통의 장 조성',
+        imageUrl: null,
+        tags: ['대회', '노래', '댄스'],
+        isActive: true,
+        order: 5,
+      },
+      {
+        title: '청소년운영위원회',
+        department: '청소년활동부',
+        startDate: new Date('2025-02-01'),
+        endDate: new Date('2025-12-31'),
+        targetAudience: '중·고등학생',
+        capacity: 15,
+        fee: 0,
+        recruitStatus: 'recruiting',
+        description: '시설 및 프로그램 모니터링과 간담회를 통한 청소년 의견 반영. 청소년관장제와 일일 관장 체험 운영',
+        imageUrl: null,
+        tags: ['자치', '운영위원회', '참여'],
+        isActive: true,
+        order: 6,
+      },
+      {
+        title: 'CODE: 파일럿 군집드론',
+        department: '4차산업교육부',
+        startDate: new Date('2025-03-10'),
+        endDate: new Date('2025-05-10'),
+        targetAudience: '중학생',
+        capacity: 16,
+        fee: 80000,
+        recruitStatus: 'recruiting',
+        description: '드론 비행 원리와 코딩 기초 학습. 군집 비행 수행 및 팀별 퍼포먼스 구현으로 창의적 문제 해결 능력 향상',
+        imageUrl: null,
+        tags: ['드론', '코딩', '4차산업'],
+        isActive: true,
+        order: 7,
+      },
+      {
+        title: '그때 그 AI(아이)들',
+        department: 'AI교육부',
+        startDate: new Date('2025-05-01'),
+        endDate: new Date('2025-07-31'),
+        targetAudience: '중·고등학생',
+        capacity: 20,
+        fee: 0,
+        recruitStatus: 'recruiting',
+        description: '참전용사 인터뷰와 AI 기술 활용 자서전 동화 제작. 세대 간 소통과 보훈 의식 함양, 디지털 결과물 전시',
+        imageUrl: null,
+        tags: ['AI', '보훈', '세대소통'],
+        isActive: true,
+        order: 8,
+      },
+      {
+        title: '패밀리데이',
+        department: '가족지원부',
+        startDate: new Date('2025-06-07'),
+        endDate: new Date('2025-06-07'),
+        targetAudience: '가족',
+        capacity: 40,
+        fee: 30000,
+        recruitStatus: 'recruiting',
+        description: '무화과·버섯 수확 등 농장 체험과 요리 활동으로 가족 간 소통 강화. 가족 그릇 만들기 등 체험 중심 활동',
+        imageUrl: null,
+        tags: ['가족', '체험', '소통'],
+        isActive: true,
+        order: 9,
+      },
+      {
+        title: 'A·I 4차산업 페스티벌',
+        department: '4차산업교육부',
+        startDate: new Date('2025-10-15'),
+        endDate: new Date('2025-10-15'),
+        targetAudience: '청소년 및 지역주민',
+        capacity: 200,
+        fee: 0,
+        recruitStatus: 'waiting',
+        description: '드론, 로봇, 코딩 등 미래 산업 체험 부스와 전문가 토크콘서트. AI 문화 확산 및 융합 역량 강화',
+        imageUrl: null,
+        tags: ['AI', '페스티벌', '4차산업'],
+        isActive: true,
+        order: 10,
+      },
+      {
+        title: '청소년동아리',
+        department: '청소년활동부',
+        startDate: new Date('2025-03-01'),
+        endDate: new Date('2025-12-31'),
+        targetAudience: '중·고등학생',
+        capacity: 50,
+        fee: 10000,
+        recruitStatus: 'recruiting',
+        description: '자율적 동아리 활동 환경 조성 및 물품·장소 지원. 연합 활동 및 지역사회 공연 참여로 끼와 재능 발산',
+        imageUrl: null,
+        tags: ['동아리', '자율활동', '공연'],
+        isActive: true,
+        order: 11,
+      },
+      {
+        title: '대학생동아리 캠퍼스',
+        department: '교육운영부',
+        startDate: new Date('2025-03-15'),
+        endDate: new Date('2025-11-30'),
+        targetAudience: '대학생',
+        capacity: 20,
+        fee: 0,
+        recruitStatus: 'recruiting',
+        description: '대학생이 전공 지식 바탕으로 초·중기 청소년에게 강의. 전공 박람회와 멘토링으로 네트워크 구축',
+        imageUrl: null,
+        tags: ['대학생', '멘토링', '교육'],
+        isActive: true,
+        order: 12,
+      },
+      {
+        title: '펫(pet)밀리 라이프',
+        department: '시민교육부',
+        startDate: new Date('2025-04-15'),
+        endDate: new Date('2025-09-15'),
+        targetAudience: '중·고등학생',
+        capacity: 25,
+        fee: 20000,
+        recruitStatus: 'recruiting',
+        description: '동물권 교육 및 유기동물 보호소 봉사로 생명 존중 가치 내면화. 펫 페스티벌과 캠페인 기획',
+        imageUrl: null,
+        tags: ['동물', '봉사', '생명존중'],
+        isActive: true,
+        order: 13,
+      },
+      {
+        title: '가족 요리 푸드테라피',
+        department: '가족지원부',
+        startDate: new Date('2025-03-20'),
+        endDate: new Date('2025-06-20'),
+        targetAudience: '가족',
+        capacity: 15,
+        fee: 40000,
+        recruitStatus: 'recruiting',
+        description: '컬러 파스타, 수제 피자 등 요리로 가족 간 유대감 향상. 오감 자극 활동으로 정서 안정과 소통 지원',
+        imageUrl: null,
+        tags: ['요리', '가족', '테라피'],
+        isActive: true,
+        order: 14,
+      },
+      {
+        title: '청소년 자율공간 운영',
+        department: '시설운영부',
+        startDate: new Date('2025-02-01'),
+        endDate: new Date('2025-12-31'),
+        targetAudience: '중·고등학생',
+        capacity: 30,
+        fee: 0,
+        recruitStatus: 'recruiting',
+        description: '안전하고 편안한 자율 공간 조성. 분기별 콘텐츠 보강과 테마형 이벤트로 공간 이용 활성화',
+        imageUrl: null,
+        tags: ['자율공간', '휴식', '또래교류'],
+        isActive: true,
+        order: 15,
+      },
+      {
+        title: '미래적성분석프로그램',
+        department: '진로교육부',
+        startDate: new Date('2025-04-01'),
+        endDate: new Date('2025-05-31'),
+        targetAudience: '중·고등학생',
+        capacity: 20,
+        fee: 30000,
+        recruitStatus: 'recruiting',
+        description: '3D 프린팅과 생성형 AI 프롬프트 엔지니어링 체험. 기술 이해와 실습으로 진로 설계 역량 강화',
+        imageUrl: null,
+        tags: ['진로', '3D프린팅', 'AI'],
+        isActive: true,
+        order: 16,
+      },
+      {
+        title: '마을 환경 개선',
+        department: '시민교육부',
+        startDate: new Date('2025-05-10'),
+        endDate: new Date('2025-08-10'),
+        targetAudience: '중·고등학생',
+        capacity: 30,
+        fee: 0,
+        recruitStatus: 'recruiting',
+        description: '마을 위험 요소와 불편 사항 조사 및 개선안 제안. 수련활동인증제 연계로 사회참여 역량 강화',
+        imageUrl: null,
+        tags: ['환경', '마을', '사회참여'],
+        isActive: true,
+        order: 17,
+      },
+      {
+        title: '마을 환경 개선 동아리',
+        department: '시민교육부',
+        startDate: new Date('2025-03-01'),
+        endDate: new Date('2025-12-31'),
+        targetAudience: '중·고등학생',
+        capacity: 20,
+        fee: 0,
+        recruitStatus: 'recruiting',
+        description: '마을 환경 관찰 및 기록. 플로깅과 캠페인으로 공동체 문제 해결 협력 태도 함양',
+        imageUrl: null,
+        tags: ['환경', '동아리', '플로깅'],
+        isActive: true,
+        order: 18,
+      },
+      {
+        title: '오늘의 친절 프로젝트',
+        department: '인성교육부',
+        startDate: new Date('2025-02-20'),
+        endDate: new Date('2025-12-20'),
+        targetAudience: '중·고등학생',
+        capacity: 40,
+        fee: 0,
+        recruitStatus: 'recruiting',
+        description: '일상 속 친절 실천 일기 및 공유. 응원 부스 운영과 마음 배달 활동으로 타인 존중 태도 형성',
+        imageUrl: null,
+        tags: ['인성', '친절', '나눔'],
+        isActive: true,
+        order: 19,
+      },
+      {
+        title: '가족캠핑',
+        department: '가족지원부',
+        startDate: new Date('2025-07-25'),
+        endDate: new Date('2025-07-26'),
+        targetAudience: '가족',
+        capacity: 30,
+        fee: 50000,
+        recruitStatus: 'waiting',
+        description: '레크리에이션과 요리 경연 등 캠핑 프로그램. 가족 커뮤니티 네트워크 구축 및 건강한 라이프스타일 증진',
+        imageUrl: null,
+        tags: ['캠핑', '가족', '야외활동'],
+        isActive: true,
+        order: 20,
+      },
+      {
+        title: '대학생실습',
+        department: '교육운영부',
+        startDate: new Date('2025-06-01'),
+        endDate: new Date('2025-08-31'),
+        targetAudience: '대학생',
+        capacity: 10,
+        fee: 0,
+        recruitStatus: 'recruiting',
+        description: '프로그램 기획 및 행정 지도 등 현장 실무 제공. 예비 지도자 전문 역량 강화 및 지역 네트워크 구축',
+        imageUrl: null,
+        tags: ['실습', '대학생', '지도자'],
+        isActive: true,
+        order: 21,
+      },
+    ],
+  });
+  console.log('✅ 프로그램 데이터 21개 생성 완료!');
 
-  console.log('🎉 Seeding 완료!');
+  console.log('🎉 모든 시드 데이터 생성 완료!');
+  console.log('📧 관리자: admin@youth.com');
+  console.log('🔑 비밀번호: admin123');
 }
 
 main()
   .catch((e) => {
-    console.error('❌ Seeding 실패:', e);
+    console.error('❌ 시드 에러:', e);
     process.exit(1);
   })
   .finally(async () => {

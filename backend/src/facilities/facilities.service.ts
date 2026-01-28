@@ -47,7 +47,7 @@ export class FacilitiesService {
     };
   }
 
-  // 시설 생성
+  // ✅ 시설 생성 - 자동 순서 할당
   async createFacility(data: {
     name: string;
     icon?: string;
@@ -56,6 +56,15 @@ export class FacilitiesService {
     floor?: string;
     order?: number;
   }) {
+    // ✅ order가 없으면 자동으로 마지막 순서 + 1
+    let order = data.order;
+    if (order === undefined || order === null) {
+      const maxOrder = await prisma.facility.aggregate({
+        _max: { order: true },
+      });
+      order = (maxOrder._max.order || 0) + 1;
+    }
+
     const facility = await prisma.facility.create({
       data: {
         name: data.name,
@@ -63,7 +72,7 @@ export class FacilitiesService {
         description: data.description,
         capacity: data.capacity,
         floor: data.floor,
-        order: data.order || 0,
+        order: order,
         isActive: true,
       },
     });
@@ -75,7 +84,7 @@ export class FacilitiesService {
     };
   }
 
-  // 시설 수정
+  // ✅ 시설 수정 - 제공된 필드만 업데이트
   async updateFacility(
     id: string,
     data: {
@@ -89,9 +98,20 @@ export class FacilitiesService {
     },
   ) {
     try {
+      // ✅ undefined인 필드는 제외
+      const updateData: any = {};
+      
+      if (data.name !== undefined) updateData.name = data.name;
+      if (data.icon !== undefined) updateData.icon = data.icon;
+      if (data.description !== undefined) updateData.description = data.description;
+      if (data.capacity !== undefined) updateData.capacity = data.capacity;
+      if (data.floor !== undefined) updateData.floor = data.floor;
+      if (data.order !== undefined) updateData.order = data.order;
+      if (data.isActive !== undefined) updateData.isActive = data.isActive;
+
       const facility = await prisma.facility.update({
         where: { id },
-        data,
+        data: updateData,
       });
 
       return {
@@ -107,15 +127,13 @@ export class FacilitiesService {
     }
   }
 
-  // ✅ 시설 삭제 (Hard Delete로 변경!)
+  // 시설 삭제 (Hard Delete)
   async deleteFacility(id: string) {
     try {
-      // 먼저 관련 예약 내역 삭제
       await prisma.booking.deleteMany({
         where: { facilityId: id },
       });
 
-      // 시설 삭제
       await prisma.facility.delete({
         where: { id },
       });

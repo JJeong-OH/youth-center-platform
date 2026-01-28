@@ -7,6 +7,7 @@ interface User {
   userId: number;
   name: string;
   email: string;
+  phoneNumber?: string;
   role: string;
   createdAt: string;
   surveyCount: number;
@@ -48,13 +49,43 @@ export default function UsersPage() {
     }
   };
 
+  const handleDeleteUser = async (userId: number, userName: string) => {
+    if (!confirm(`정말로 ${userName} 회원을 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`)) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('adminToken');
+      const response = await fetch(
+        `http://localhost:3001/api/admin/users/${userId}`,
+        {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      );
+
+      const data = await response.json();
+
+      if (data.success) {
+        alert('회원이 삭제되었습니다.');
+        fetchUsers();
+      } else {
+        alert('삭제 실패: ' + data.message);
+      }
+    } catch (error) {
+      console.error('회원 삭제 에러:', error);
+      alert('회원 삭제 중 오류가 발생했습니다.');
+    }
+  };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('ko-KR');
   };
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f8fafc' }}>
-      {/* 헤더 */}
       <header style={{
         backgroundColor: 'white',
         borderBottom: '1px solid #e2e8f0',
@@ -94,7 +125,6 @@ export default function UsersPage() {
         </div>
       </header>
 
-      {/* 메인 컨텐츠 */}
       <main style={{ maxWidth: '1400px', margin: '0 auto', padding: '0 24px 32px' }}>
         <div style={{ backgroundColor: 'white', borderRadius: '8px', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
           {loading ? (
@@ -110,10 +140,12 @@ export default function UsersPage() {
                       <th style={tableHeaderStyle}>회원번호</th>
                       <th style={tableHeaderStyle}>이름</th>
                       <th style={tableHeaderStyle}>이메일</th>
-                      <th style={tableHeaderStyle}>권한</th>
+                      <th style={tableHeaderStyle}>전화번호</th>
+                      <th style={tableHeaderStyle}>역할</th>
                       <th style={tableHeaderStyle}>가입일</th>
-                      <th style={tableHeaderStyle}>설문참여</th>
-                      <th style={tableHeaderStyle}>예약건수</th>
+                      <th style={tableHeaderStyle}>설문조사</th>
+                      <th style={tableHeaderStyle}>예약</th>
+                      <th style={tableHeaderStyle}>작업</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -124,6 +156,7 @@ export default function UsersPage() {
                           <strong style={{ color: '#1e293b' }}>{user.name}</strong>
                         </td>
                         <td style={tableCellStyle}>{user.email}</td>
+                        <td style={tableCellStyle}>{user.phoneNumber || '-'}</td>
                         <td style={tableCellStyle}>
                           <span style={{
                             padding: '4px 12px',
@@ -139,13 +172,31 @@ export default function UsersPage() {
                         <td style={tableCellStyle}>{formatDate(user.createdAt)}</td>
                         <td style={tableCellStyle}>{user.surveyCount}회</td>
                         <td style={tableCellStyle}>{user.bookingCount}건</td>
+                        <td style={tableCellStyle}>
+                          {user.role !== 'ADMIN' && (
+                            <button
+                              onClick={() => handleDeleteUser(user.userId, user.name)}
+                              style={{
+                                padding: '6px 12px',
+                                backgroundColor: '#fee2e2',
+                                color: '#991b1b',
+                                border: '1px solid #fecaca',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                fontSize: '12px',
+                                fontWeight: '600'
+                              }}
+                            >
+                              삭제
+                            </button>
+                          )}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
 
-              {/* 페이지네이션 */}
               <div style={{
                 padding: '20px',
                 display: 'flex',
