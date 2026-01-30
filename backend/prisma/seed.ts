@@ -6,6 +6,17 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('🌱 시드 데이터 생성 시작...');
 
+  // ✅ 기존 데이터 삭제 (순서 중요!)
+  console.log('🗑️  기존 데이터 정리 중...');
+  
+  await prisma.facility.deleteMany({});
+  console.log('  - Facility 삭제 완료');
+  
+  await prisma.program.deleteMany({});
+  console.log('  - Program 삭제 완료');
+  
+  console.log('✅ 기존 데이터 정리 완료\n');
+
   // ✅ 1. 관리자 계정
   const hashedPassword = await bcrypt.hash('admin123', 10);
   
@@ -403,7 +414,7 @@ async function main() {
   });
   console.log('✅ 프로그램 데이터 21개 생성 완료!');
 
-  console.log('🎉 모든 시드 데이터 생성 완료!');
+  console.log('\n🎉 모든 시드 데이터 생성 완료!');
   console.log('📧 관리자: admin@youth.com');
   console.log('🔑 비밀번호: admin123');
 }

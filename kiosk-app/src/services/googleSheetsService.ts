@@ -1,4 +1,6 @@
-const API_BASE = 'http://localhost:3001/api/kiosk';
+import { API_URL } from '../config/api';
+
+const API_BASE = `${API_URL}/api/kiosk`;
 
 export async function getFacilities() {
   try {
@@ -36,6 +38,7 @@ export async function getBookings() {
     return [];
   }
 }
+
 export async function addBooking(bookingData: {
   facilityId: string;
   userName: string;
@@ -53,7 +56,7 @@ export async function addBooking(bookingData: {
     });
     
     const result = await response.json();
-    console.log('📥 addBooking 응답:', result); // 
+    console.log('📥 addBooking 응답:', result);
     
     if (!response.ok || !result.success) {
       throw new Error(result.error || result.message || '예약 추가 실패');
@@ -77,7 +80,6 @@ export async function addBooking(bookingData: {
   }
 }
 
-// 예약 삭제
 export async function deleteBooking(bookingId: number) {
   try {
     const response = await fetch(`${API_BASE}/bookings/${bookingId}`, {
@@ -95,7 +97,6 @@ export async function deleteBooking(bookingId: number) {
   }
 }
 
-// 프로그램 목록 조회
 export async function getPrograms() {
   try {
     const response = await fetch(`${API_BASE}/programs`);
@@ -107,7 +108,6 @@ export async function getPrograms() {
   }
 }
 
-// 프로그램 신청 조회
 export async function getApplications() {
   try {
     const response = await fetch(`${API_BASE}/applications`);
@@ -130,7 +130,6 @@ export async function getApplications() {
   }
 }
 
-// 프로그램 신청 추가
 export async function addApplication(applicationData: {
   programId: number;
   userName: string;
@@ -171,7 +170,6 @@ export async function addApplication(applicationData: {
   }
 }
 
-// 프로그램 신청 삭제
 export async function deleteApplication(applicationId: number) {
   try {
     const response = await fetch(`${API_BASE}/applications/${applicationId}`, {

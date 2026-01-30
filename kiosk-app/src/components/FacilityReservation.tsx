@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { UsersIcon, CheckCircleIcon, XCircleIcon, CalendarIcon, TicketIcon, LoadingIcon, UserIcon, PhoneIcon } from './Icons';
 import { BackButton } from './BackButton';  
 
-const API_URL = 'http://localhost:3001';
+import { API_URL } from '../config/api';
 
 type Facility = {
   id: string;
