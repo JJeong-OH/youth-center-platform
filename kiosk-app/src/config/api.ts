@@ -10,7 +10,8 @@ export const API_URL = (() => {
       return 'http://localhost:3001';
     }
     
-    return 'https://youth-center-backend.onrender.com';
+    // ✅ 올바른 URL로 수정!
+    return 'https://youth-center-backend-b331.onrender.com';
   }
   
   return 'http://localhost:3001';
